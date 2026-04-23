@@ -29,6 +29,8 @@
 - `adr/ADR-0005-multi-account-safe.md`
 - `adr/ADR-0006-bridges-security-model.md`
 - `adr/ADR-0007-design-system-motion.md`
+- `adr/ADR-0008-notification-extensions.md`
+- `adr/ADR-0009-storage-separation.md`
 - `adr/ADR-0010-observability-redaction.md`
 - `adr/ADR-0011-calls-boundary.md`
 - `adr/ADR-0012-feature-modules.md`
