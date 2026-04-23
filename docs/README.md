@@ -15,11 +15,12 @@
 - `technical-design/TD-0002-auth-session.md`
 - `technical-design/TD-0003-chat-room-list-timeline.md`
 - `technical-design/TD-0004-notifications.md`
-- `technical-design/TD-0004-notifications-nse-fcm.md`
-- `technical-design/TD-0005-subscriptions-and-entitlements.md`
-- `technical-design/TD-0005-bridges.md`
-- `technical-design/TD-0006-mobile-repo-structure.md`
-- `technical-design/TD-0006-subscriptions-billing.md`
+- `technical-design/TD-0005-notifications-nse-fcm.md`
+- `technical-design/TD-0006-bridges.md`
+- `technical-design/TD-0007-subscriptions-and-entitlements.md`
+- `technical-design/TD-0008-mobile-repo-structure.md`
+- `technical-design/TD-0009-subscriptions-billing.md`
+- `technical-design/TD-0010-versioning.md`
 
 ## Architekturentscheidungen
 - `adr/ADR-0001-monorepo.md`
@@ -50,4 +51,4 @@
 - `diagrams/flows/login-oidc.md`
 - `diagrams/flows/message-send.md`
 - `diagrams/flows/push-open.md`
-- `diagrams/flows/external-warning-flow.md`
+- `diagrams/flows/bridge-warning-flow.md`
