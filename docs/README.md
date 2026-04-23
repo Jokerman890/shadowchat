@@ -1,0 +1,25 @@
+# ShadowChat Docs
+
+- `prd/PRD-shadowchat.md`
+- `prd/scope-mvp.md`
+- `prd/monetization.md`
+- `design/CHAT-DESIGN-MOTION-SPEC.md`
+- `design/DESIGN-TOKENS.md`
+- `technical-design/TD-0001-system-architecture.md`
+- `technical-design/TD-0002-auth-session.md`
+- `technical-design/TD-0003-chat-room-list-timeline.md`
+- `technical-design/TD-0004-notifications.md`
+- `technical-design/TD-0005-subscriptions-and-entitlements.md`
+- `technical-design/TD-0006-mobile-repo-structure.md`
+- `adr/ADR-0001-monorepo.md`
+- `adr/ADR-0002-rust-core.md`
+- `adr/ADR-0003-native-ui.md`
+- `adr/ADR-0004-auth-oidc-mas.md`
+- `adr/ADR-0005-multi-account-safe.md`
+- `adr/ADR-0006-bridges-security-model.md`
+- `adr/ADR-0007-design-system-motion.md`
+- `quality/security-baseline.md`
+- `quality/test-strategy.md`
+- `quality/release-definition.md`
+- `diagrams/c4-context.md`
+- `diagrams/c4-container.md`
