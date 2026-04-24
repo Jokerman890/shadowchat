@@ -1,0 +1,22 @@
+[workspace]
+members = [
+  "crates/shadow_core_client",
+  "crates/shadow_core_domain",
+  "crates/shadow_core_auth",
+  "crates/shadow_core_session",
+  "crates/shadow_core_rooms",
+  "crates/shadow_core_timeline",
+  "crates/shadow_core_ffi",
+  "crates/shadow_core_testing",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "UNLICENSED"
+version = "0.1.0"
+
+[workspace.dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
