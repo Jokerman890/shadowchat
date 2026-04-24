@@ -1,0 +1,20 @@
+name: CI Rust
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cargo fmt
+        run: cargo fmt --all --check
+        working-directory: core/rust
+      - name: Cargo test
+        run: cargo test --workspace
+        working-directory: core/rust
