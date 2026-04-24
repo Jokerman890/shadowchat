@@ -1,0 +1,8 @@
+[package]
+name = "shadow_core_rooms"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+shadow_core_domain = { path = "../shadow_core_domain" }
