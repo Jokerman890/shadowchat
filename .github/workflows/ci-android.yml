@@ -1,0 +1,14 @@
+name: CI Android
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Android placeholder
+        run: echo "Wire up Gradle modules and Android build in a later step."
