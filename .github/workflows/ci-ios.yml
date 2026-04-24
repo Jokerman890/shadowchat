@@ -1,0 +1,14 @@
+name: CI iOS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode placeholder
+        run: echo "Wire up XcodeGen, Swift packages and targets in a later step."
