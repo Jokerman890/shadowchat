@@ -36,9 +36,11 @@ Startstruktur für ShadowChat im Repo.
   - `:app`
   - `:designsystem`
   - `:features:chatlist`
+  - `:features:timeline`
 - Android `:app` hostet die Chat-Liste als Startscreen.
 - iOS `ShadowChat` hostet `ShadowChatRootView` aus `ShadowChatAppShell` als Startscreen.
 - Der Chat-Listen-Slice ist buildbar, testbar und ohne Matrix- oder Rust-Bridge verdrahtet.
+- Der Room-Timeline-Shell-Slice liegt als eigenes Android-Feature-Modul und als eigenes iOS SwiftPM-Feature-Target vor.
 
 ## Regeln
 - Feature-Grenzen bleiben sichtbar

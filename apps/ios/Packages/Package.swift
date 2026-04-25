@@ -17,6 +17,10 @@ let package = Package(
             targets: ["ShadowChatListFeature"]
         ),
         .library(
+            name: "ShadowRoomTimelineFeature",
+            targets: ["ShadowRoomTimelineFeature"]
+        ),
+        .library(
             name: "ShadowChatAppShell",
             targets: ["ShadowChatAppShell"]
         )
@@ -30,6 +34,10 @@ let package = Package(
             dependencies: ["ShadowDesignSystem"]
         ),
         .target(
+            name: "ShadowRoomTimelineFeature",
+            dependencies: ["ShadowDesignSystem"]
+        ),
+        .target(
             name: "ShadowChatAppShell",
             dependencies: [
                 "ShadowDesignSystem",
@@ -39,6 +47,10 @@ let package = Package(
         .testTarget(
             name: "ShadowChatListFeatureTests",
             dependencies: ["ShadowChatListFeature"]
+        ),
+        .testTarget(
+            name: "ShadowRoomTimelineFeatureTests",
+            dependencies: ["ShadowRoomTimelineFeature"]
         )
     ]
 )

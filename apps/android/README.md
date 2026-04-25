@@ -24,3 +24,4 @@ Jetpack Compose mit modularer Architektur und klaren Feature-Grenzen.
 - `app`: minimale Android-App-Shell mit `MainActivity` und Chat-Liste als Startscreen.
 - `designsystem`: gemeinsame Compose-Tokens fuer Farbe, Spacing und Motion.
 - `features/chatlist`: erster Chat-Listen-Slice mit UI-State, ViewModel, Repository-Schnittstelle und Compose-Screen.
+- `features/timeline`: Room-Timeline-Shell mit UI-State, ViewModel, Repository-Schnittstelle und Compose-Screen ohne Matrix-Live-Anbindung.

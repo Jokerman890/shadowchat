@@ -1,0 +1,16 @@
+<resources>
+    <string name="room_timeline_default_title">Room</string>
+    <string name="room_timeline_loading">Loading messages</string>
+    <string name="room_timeline_empty_title">No messages yet</string>
+    <string name="room_timeline_empty_body">Messages in this room will appear here.</string>
+    <string name="room_timeline_error_title">Messages unavailable</string>
+    <string name="room_timeline_error_body">Try again when your connection is stable.</string>
+    <string name="room_timeline_retry">Retry</string>
+    <string name="room_timeline_you">You</string>
+    <string name="room_timeline_delivery_sending">sending</string>
+    <string name="room_timeline_delivery_sent">sent</string>
+    <string name="room_timeline_delivery_delivered">delivered</string>
+    <string name="room_timeline_delivery_read">read</string>
+    <string name="room_timeline_delivery_failed">failed</string>
+    <string name="room_timeline_message_accessibility">%1$s: %2$s, %3$s, %4$s</string>
+</resources>

@@ -37,3 +37,11 @@ Definition der zentralen Messaging-Flows für Chat-Liste und Chat-Raum.
 - Gemeinsame UI-Zustaende: loading, loaded, empty, failed/error.
 - Room-Auswahl wird als Event nach oben gereicht; Navigation bleibt ausserhalb der reinen Chat-Listen-UI.
 - Trust-Level werden sichtbar abgebildet: verified, standard, reduced.
+
+## Mobile Room-Timeline-Shell
+- iOS und Android nutzen app-eigene Timeline-UI-Modelle statt roher Matrix- oder Core-Typen.
+- Der Slice trennt `RoomTimelineRepository`, StateHolder/ViewModel und stateless Screen/View.
+- Gemeinsame UI-Zustaende: loading, loaded, empty, failed/error.
+- Repository-Kontrakt liefert einen Snapshot mit `roomId`, optionalem `roomTitle` und Timeline-Items.
+- Timeline-Items bilden nur shell-relevante Felder ab: message id, sender display name, body, time label, direction und delivery state.
+- Es gibt noch keine Matrix-Live-Anbindung, keine Send Pipeline und keine Composer-Logik.
