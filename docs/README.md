@@ -44,6 +44,12 @@
 - `quality/release-definition.md`
 - `quality/privacy-logging-policy.md`
 
+## Codex Prompts
+- `codex/prompts/ios-screen-task.md`
+- `codex/prompts/android-screen-task.md`
+- `codex/prompts/mobile-review-task.md`
+- `codex/prompts/mobile-validation-task.md`
+
 ## Diagramme und Flows
 - `diagrams/c4-context.md`
 - `diagrams/c4-container.md`

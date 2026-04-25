@@ -4,11 +4,59 @@ on:
   push:
     branches: [ main ]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   ios:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Xcode placeholder
-        run: echo "Wire up XcodeGen, Swift packages and targets in a later step."
+      - name: Show Swift version
+        run: swift --version
+      - name: List SwiftPM schemes
+        working-directory: apps/ios/Packages
+        run: xcodebuild -list
+      - name: Test SwiftPM package on iOS Simulator
+        working-directory: apps/ios/Packages
+        run: |
+          set -euo pipefail
+          xcodebuild -list -json > xcodebuild-list.json
+          SCHEME="$(python3 - <<'PY'
+          import json
+
+          with open("xcodebuild-list.json", encoding="utf-8") as handle:
+              data = json.load(handle)
+
+          schemes = []
+          for root in ("project", "workspace"):
+              schemes.extend(data.get(root, {}).get("schemes", []))
+
+          preferred = ("ShadowChatMobile", "ShadowChatMobile-Package", "ShadowChatListFeature")
+          for scheme in preferred:
+              if scheme in schemes:
+                  print(scheme)
+                  break
+          else:
+              print(schemes[0] if schemes else "")
+          PY
+          )"
+          if [ -z "$SCHEME" ]; then
+            echo "No SwiftPM scheme found."
+            exit 1
+          fi
+          DEVICE_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ { print $2; exit }')"
+          if [ -z "$DEVICE_ID" ]; then
+            echo "No available iPhone simulator found."
+            exit 1
+          fi
+          xcodebuild test -scheme "$SCHEME" -destination "id=$DEVICE_ID"
+      - name: Build iOS app target
+        working-directory: apps/ios
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project ShadowChat.xcodeproj \
+            -scheme ShadowChat \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO

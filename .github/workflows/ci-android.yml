@@ -10,5 +10,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Android placeholder
-        run: echo "Wire up Gradle modules and Android build in a later step."
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Show Gradle tasks
+        working-directory: apps/android
+        run: ./gradlew tasks
+      - name: Build Android debug app
+        working-directory: apps/android
+        run: ./gradlew assembleDebug
+      - name: Run Android unit tests
+        working-directory: apps/android
+        run: ./gradlew testDebugUnitTest
+      - name: Run Android lint
+        working-directory: apps/android
+        run: ./gradlew lint

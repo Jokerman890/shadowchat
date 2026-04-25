@@ -28,6 +28,18 @@ Startstruktur für ShadowChat im Repo.
 - designsystem
 - motion
 
+## Aktueller Mobile Build-Slice
+- iOS SwiftPM liegt unter `apps/ios/Packages`.
+- iOS App Target liegt unter `apps/ios/ShadowChat.xcodeproj`.
+- Android Gradle Root liegt unter `apps/android`.
+- Android Module:
+  - `:app`
+  - `:designsystem`
+  - `:features:chatlist`
+- Android `:app` hostet die Chat-Liste als Startscreen.
+- iOS `ShadowChat` hostet `ShadowChatRootView` aus `ShadowChatAppShell` als Startscreen.
+- Der Chat-Listen-Slice ist buildbar, testbar und ohne Matrix- oder Rust-Bridge verdrahtet.
+
 ## Regeln
 - Feature-Grenzen bleiben sichtbar
 - UI bleibt vom Core getrennt

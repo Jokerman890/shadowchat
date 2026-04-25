@@ -19,3 +19,19 @@ ShadowChat braucht frühe Tests für Core, Session, Push und Chat-Flows.
 
 ## Qualitätsregel
 Kritische Produktflüsse werden vor visuellen Extras abgesichert.
+
+## Mobile CI Checks
+- Android App-Shell und Chat-Liste:
+  - `cd apps/android`
+  - `./gradlew tasks`
+  - `./gradlew assembleDebug`
+  - `./gradlew testDebugUnitTest`
+  - `./gradlew lint`
+- iOS Packages:
+  - `cd apps/ios/Packages`
+  - `xcodebuild -list`
+  - `xcodebuild test -scheme ShadowChatMobile -destination "platform=iOS Simulator,name=<iPhone Simulator>"`
+- iOS App Target:
+  - `cd apps/ios`
+  - `xcodebuild -list -project ShadowChat.xcodeproj`
+  - `xcodebuild build -project ShadowChat.xcodeproj -scheme ShadowChat -sdk iphonesimulator -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO`
