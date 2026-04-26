@@ -1,5 +1,6 @@
 <resources>
     <string name="room_timeline_default_title">Room</string>
+    <string name="room_timeline_back_to_chats">Back to chats</string>
     <string name="room_timeline_room_symbol">SC</string>
     <string name="room_timeline_shell_label">Timeline shell</string>
     <string name="room_timeline_call_action">Call</string>

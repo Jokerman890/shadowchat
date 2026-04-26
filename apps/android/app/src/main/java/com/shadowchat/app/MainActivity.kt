@@ -2,6 +2,7 @@ package com.shadowchat.app
 
 import android.os.Bundle
 import android.view.View
+import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedContent
@@ -29,7 +30,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -104,6 +104,14 @@ private fun ShadowChatAppShell(chatListViewModel: ChatListViewModel) {
     var selectedTab by remember { mutableStateOf(AppTab.Chats) }
     var selectedRoomId by remember { mutableStateOf<String?>(null) }
     val motionEnabled = shadowMotionEnabled()
+    val closeConversation = {
+        selectedRoomId = null
+        selectedTab = AppTab.Chats
+    }
+
+    BackHandler(enabled = selectedTab == AppTab.Chats && selectedRoomId != null) {
+        closeConversation()
+    }
 
     ShadowLiquidBackground(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -156,7 +164,10 @@ private fun ShadowChatAppShell(chatListViewModel: ChatListViewModel) {
                                 if (animatedRoomId == null) {
                                     ChatListRoute(
                                         viewModel = chatListViewModel,
-                                        onRoomSelected = { selectedRoomId = it },
+                                        onRoomSelected = {
+                                            selectedTab = AppTab.Chats
+                                            selectedRoomId = it
+                                        },
                                     )
                                 } else {
                                     val timelineViewModel: RoomTimelineViewModel = viewModel(
@@ -167,15 +178,10 @@ private fun ShadowChatAppShell(chatListViewModel: ChatListViewModel) {
                                         ),
                                     )
 
-                                    Column {
-                                        Button(
-                                            onClick = { selectedRoomId = null },
-                                            modifier = Modifier.padding(start = ShadowSpacing.Lg, top = ShadowSpacing.Lg),
-                                        ) {
-                                            Text(text = stringResource(R.string.timeline_back_to_chats))
-                                        }
-                                        RoomTimelineRoute(viewModel = timelineViewModel)
-                                    }
+                                    RoomTimelineRoute(
+                                        viewModel = timelineViewModel,
+                                        onBackRequested = closeConversation,
+                                    )
                                 }
                             }
                         }
