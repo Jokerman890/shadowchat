@@ -2,6 +2,8 @@ import ShadowDesignSystem
 import SwiftUI
 
 public struct ChatListView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private let state: ChatListState
     private let send: (ChatListEvent) -> Void
 
@@ -102,11 +104,13 @@ public struct ChatListView: View {
                         } label: {
                             ChatListRow(item: item)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(ShadowPressScaleButtonStyle())
                         .accessibilityLabel(accessibilityLabel(for: item))
+                        .transition(.opacity.combined(with: .scale(scale: 0.985)))
                     }
                 }
                 .padding(.vertical, ShadowSpacing.xs)
+                .animation(ShadowMotion.stateTransition(reduceMotion: reduceMotion), value: items.map(\.roomId))
             }
             .refreshable {
                 send(.refreshRequested)

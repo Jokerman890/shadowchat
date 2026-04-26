@@ -1,5 +1,6 @@
 package com.shadowchat.features.timeline
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -21,13 +22,20 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -37,9 +45,11 @@ import androidx.compose.ui.unit.dp
 import com.shadowchat.designsystem.ShadowColors
 import com.shadowchat.designsystem.ShadowGlassPanel
 import com.shadowchat.designsystem.ShadowLiquidBackground
+import com.shadowchat.designsystem.ShadowMotion
 import com.shadowchat.designsystem.ShadowRadii
 import com.shadowchat.designsystem.ShadowSpacing
 import com.shadowchat.designsystem.shadowAccentGradient
+import com.shadowchat.designsystem.shadowMotionEnabled
 
 @Composable
 fun RoomTimelineScreen(
@@ -122,11 +132,13 @@ private fun TimelineHeader(title: String) {
 
 @Composable
 private fun HeaderAction(icon: TimelineActionIcon, label: String) {
+    val modifier = Modifier.shadowPressScale()
+
     ShadowGlassPanel(radius = ShadowRadii.Control) {
         TimelineActionIconCanvas(
             icon = icon,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
+            modifier = modifier
                 .size(42.dp)
                 .padding(10.dp)
                 .semantics { contentDescription = label },
@@ -301,6 +313,7 @@ private fun ComposerAction(
     label: String,
     emphasized: Boolean = false,
 ) {
+    val modifier = Modifier.shadowPressScale()
     val backgroundModifier = if (emphasized) {
         Modifier.background(shadowAccentGradient(), CircleShape)
     } else {
@@ -308,7 +321,7 @@ private fun ComposerAction(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(42.dp)
             .then(backgroundModifier)
             .semantics { contentDescription = label },
@@ -320,6 +333,35 @@ private fun ComposerAction(
             modifier = Modifier.size(20.dp),
         )
     }
+}
+
+@Composable
+private fun Modifier.shadowPressScale(): Modifier {
+    val motionEnabled = shadowMotionEnabled()
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) ShadowMotion.PressedScale else 1f,
+        animationSpec = ShadowMotion.floatSpec(motionEnabled),
+        label = "Timeline action press scale",
+    )
+
+    return this
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
+        .pointerInput(Unit) {
+            detectTapGestures(
+                onPress = {
+                    pressed = true
+                    try {
+                        tryAwaitRelease()
+                    } finally {
+                        pressed = false
+                    }
+                },
+            )
+        }
 }
 
 private enum class TimelineActionIcon {

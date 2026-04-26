@@ -4,6 +4,15 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -48,9 +58,12 @@ import com.shadowchat.designsystem.ShadowChatTheme
 import com.shadowchat.designsystem.ShadowColors
 import com.shadowchat.designsystem.ShadowGlassPanel
 import com.shadowchat.designsystem.ShadowLiquidBackground
+import com.shadowchat.designsystem.ShadowMotion
 import com.shadowchat.designsystem.ShadowRadii
 import com.shadowchat.designsystem.ShadowSpacing
 import com.shadowchat.designsystem.shadowAccentGradient
+import com.shadowchat.designsystem.shadowMotionEnabled
+import com.shadowchat.designsystem.shadowScreenTransitionMillis
 import com.shadowchat.features.chatlist.ChatListItemUi
 import com.shadowchat.features.chatlist.ChatListRepository
 import com.shadowchat.features.chatlist.ChatListRoute
@@ -90,6 +103,7 @@ class MainActivity : ComponentActivity() {
 private fun ShadowChatAppShell(chatListViewModel: ChatListViewModel) {
     var selectedTab by remember { mutableStateOf(AppTab.Chats) }
     var selectedRoomId by remember { mutableStateOf<String?>(null) }
+    val motionEnabled = shadowMotionEnabled()
 
     ShadowLiquidBackground(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -110,38 +124,66 @@ private fun ShadowChatAppShell(chatListViewModel: ChatListViewModel) {
                     .fillMaxSize()
                     .padding(contentPadding),
             ) {
-                when (selectedTab) {
-                    AppTab.Chats -> {
-                        val roomId = selectedRoomId
-                        if (roomId == null) {
-                            ChatListRoute(
-                                viewModel = chatListViewModel,
-                                onRoomSelected = { selectedRoomId = it },
-                            )
-                        } else {
-                            val timelineViewModel: RoomTimelineViewModel = viewModel(
-                                key = roomId,
-                                factory = RoomTimelineViewModelFactory(
-                                    roomId = roomId,
-                                    repository = DemoRoomTimelineRepository,
-                                ),
-                            )
+                AnimatedContent(
+                    targetState = selectedTab,
+                    transitionSpec = {
+                        val duration = shadowScreenTransitionMillis(motionEnabled)
+                        (fadeIn(animationSpec = tween(duration)) + scaleIn(
+                            initialScale = 0.985f,
+                            animationSpec = tween(duration),
+                        )).togetherWith(
+                            fadeOut(animationSpec = tween(duration)) + scaleOut(
+                                targetScale = 1.01f,
+                                animationSpec = tween(duration),
+                            ),
+                        ).using(SizeTransform(clip = false))
+                    },
+                    label = "Shadow tab transition",
+                ) { tab ->
+                    when (tab) {
+                        AppTab.Chats -> {
+                            val roomId = selectedRoomId
+                            AnimatedContent(
+                                targetState = roomId,
+                                transitionSpec = {
+                                    val duration = shadowScreenTransitionMillis(motionEnabled)
+                                    fadeIn(animationSpec = tween(duration)).togetherWith(
+                                        fadeOut(animationSpec = tween(duration)),
+                                    ).using(SizeTransform(clip = false))
+                                },
+                                label = "Chat room transition",
+                            ) { animatedRoomId ->
+                                if (animatedRoomId == null) {
+                                    ChatListRoute(
+                                        viewModel = chatListViewModel,
+                                        onRoomSelected = { selectedRoomId = it },
+                                    )
+                                } else {
+                                    val timelineViewModel: RoomTimelineViewModel = viewModel(
+                                        key = animatedRoomId,
+                                        factory = RoomTimelineViewModelFactory(
+                                            roomId = animatedRoomId,
+                                            repository = DemoRoomTimelineRepository,
+                                        ),
+                                    )
 
-                            Column {
-                                Button(
-                                    onClick = { selectedRoomId = null },
-                                    modifier = Modifier.padding(start = ShadowSpacing.Lg, top = ShadowSpacing.Lg),
-                                ) {
-                                    Text(text = stringResource(R.string.timeline_back_to_chats))
+                                    Column {
+                                        Button(
+                                            onClick = { selectedRoomId = null },
+                                            modifier = Modifier.padding(start = ShadowSpacing.Lg, top = ShadowSpacing.Lg),
+                                        ) {
+                                            Text(text = stringResource(R.string.timeline_back_to_chats))
+                                        }
+                                        RoomTimelineRoute(viewModel = timelineViewModel)
+                                    }
                                 }
-                                RoomTimelineRoute(viewModel = timelineViewModel)
                             }
                         }
+                        AppTab.Calls -> CallsShell()
+                        AppTab.Updates -> UpdatesShell()
+                        AppTab.Profile -> ProfileShell()
+                        AppTab.Settings -> SettingsShell()
                     }
-                    AppTab.Calls -> CallsShell()
-                    AppTab.Updates -> UpdatesShell()
-                    AppTab.Profile -> ProfileShell()
-                    AppTab.Settings -> SettingsShell()
                 }
             }
         }
@@ -187,9 +229,22 @@ private fun ShadowBottomBar(
 
 @Composable
 private fun ShadowTabIcon(tab: AppTab, selected: Boolean) {
+    val motionEnabled = shadowMotionEnabled()
     val color = if (selected) ShadowColors.DeepText else MaterialTheme.colorScheme.onSurfaceVariant
+    val scale by animateFloatAsState(
+        targetValue = if (selected) ShadowMotion.SelectedScale else 1f,
+        animationSpec = ShadowMotion.floatSpec(motionEnabled),
+        label = "Tab icon scale",
+    )
 
-    Canvas(modifier = Modifier.size(24.dp)) {
+    Canvas(
+        modifier = Modifier
+            .size(24.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
+    ) {
         val stroke = Stroke(width = 2.4.dp.toPx(), cap = StrokeCap.Round)
         when (tab) {
             AppTab.Chats -> {

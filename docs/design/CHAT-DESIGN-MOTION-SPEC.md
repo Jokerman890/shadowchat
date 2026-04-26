@@ -1,14 +1,17 @@
 # Chat Design Motion Spec
 
 ## Zielbild
-ShadowChat soll sich wie ein moderner Premium-Messenger anfühlen: hohe visuelle Qualität, starke Motion und klare Lesbarkeit.
+
+ShadowChat soll sich wie ein moderner Premium-Messenger anfuehlen: hohe visuelle Qualitaet, starke Motion und klare Lesbarkeit.
 
 ## Prinzipien
+
 - Reading first
 - Motion with purpose
 - Premium calm
 
 ## Kernbereiche
+
 - Chat-Liste
 - Chat-Raum
 - Composer
@@ -16,25 +19,33 @@ ShadowChat soll sich wie ein moderner Premium-Messenger anfühlen: hohe visuelle
 - Media Viewer
 
 ## Motion-Regeln
-- Animation erklärt Fokus und Status
-- keine hektische Dauerbewegung
-- Listen bleiben ruhig und performant
-- Reduce Motion ist Pflicht
+
+- Animation erklaert Fokus und Status.
+- Keine hektische Dauerbewegung.
+- Listen bleiben ruhig und performant.
+- Reduce Motion ist Pflicht.
+- Interaktionsfeedback nutzt kurze Press-Scale- oder Fade-Uebergaenge statt dekorativer Dauerbewegung.
+- Screen- und Room-Uebergaenge bleiben unter ca. 250 ms und duerfen Lesefluss nicht stoeren.
+- Wenn Reduce Motion aktiv ist, fallen Uebergaenge auf sofortige Zustandswechsel zurueck.
 
 ## Chat-Liste
-- sanfte Zellen-Transitions
-- klare Unread-Badges
-- Typing-Zustände weich statt hektisch
-- helle Glas-Cards auf Pastell-Hintergrund
-- Trust-Indikatoren bleiben sichtbar, aber nicht aggressiv
+
+- Sanfte Zellen-Transitions.
+- Klare Unread-Badges.
+- Typing-Zustaende weich statt hektisch.
+- Helle Glas-Cards auf Pastell-Hintergrund.
+- Trust-Indikatoren bleiben sichtbar, aber nicht aggressiv.
 
 ## Chat-Raum
-- neue Nachrichten mit leichter Materialisierung
-- Reply und Reactions mit kurzen Übergängen
-- Composer als schwebende Oberfläche
-- Incoming- und Outgoing-Bubbles nutzen helle, abgesetzte Liquid-Glass-nahe Flächen
+
+- Neue Nachrichten mit leichter Materialisierung.
+- Reply und Reactions mit kurzen Uebergaengen.
+- Composer als schwebende Oberflaeche.
+- Incoming- und Outgoing-Bubbles nutzen helle, abgesetzte Liquid-Glass-nahe Flaechen.
 
 ## Mobile App Shell
-- Bottom Navigation hostet die vorhandenen Hauptbereiche als Shell
-- Chats bleibt der Startbereich
-- Calls, Updates, Profile und Settings sind visuelle Shells ohne Produktlogik, bis eigene Slices folgen
+
+- Bottom Navigation hostet die vorhandenen Hauptbereiche als Shell.
+- Chats bleibt der Startbereich.
+- Calls, Updates, Profile und Settings sind visuelle Shells ohne Produktlogik, bis eigene Slices folgen.
+- Tab-Wechsel nutzen ruhige Fade-/Scale-Uebergaenge; Hauptinhalt bleibt stabil und lesbar.

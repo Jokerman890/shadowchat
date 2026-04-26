@@ -1,7 +1,10 @@
 package com.shadowchat.features.chatlist
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,10 +24,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -35,9 +41,11 @@ import androidx.compose.ui.unit.dp
 import com.shadowchat.designsystem.ShadowColors
 import com.shadowchat.designsystem.ShadowGlassPanel
 import com.shadowchat.designsystem.ShadowLiquidBackground
+import com.shadowchat.designsystem.ShadowMotion
 import com.shadowchat.designsystem.ShadowRadii
 import com.shadowchat.designsystem.ShadowSpacing
 import com.shadowchat.designsystem.shadowAccentGradient
+import com.shadowchat.designsystem.shadowMotionEnabled
 
 @Composable
 fun ChatListScreen(
@@ -188,11 +196,27 @@ private fun ChatListRow(
     onClick: () -> Unit,
 ) {
     val label = chatListItemAccessibilityLabel(item)
+    val motionEnabled = shadowMotionEnabled()
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) ShadowMotion.PressedScale else 1f,
+        animationSpec = ShadowMotion.floatSpec(motionEnabled),
+        label = "Chat row press scale",
+    )
 
     ShadowGlassPanel(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            )
             .semantics { contentDescription = label },
         radius = ShadowRadii.Card,
     ) {
