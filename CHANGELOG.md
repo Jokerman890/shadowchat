@@ -18,6 +18,7 @@ Das Format orientiert sich an "Keep a Changelog"; die Produktversion folgt `MAJO
 
 - Android, iOS und Rust CI sind als zentrale Validierungspfade fuer mobile Slices etabliert.
 - Mobile UI-Dokumentation beschreibt die verbleibenden visuellen Polish-Punkte.
+- Motion- und Interaktionsverhalten fuer Mobile Shell, Chat-Liste und Timeline wurde mit kurzen, Reduce-Motion-bewussten Uebergaengen verfeinert.
 
 ### Known Gaps
 

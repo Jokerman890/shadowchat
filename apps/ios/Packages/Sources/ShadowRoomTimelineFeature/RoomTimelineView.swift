@@ -2,6 +2,8 @@ import ShadowDesignSystem
 import SwiftUI
 
 public struct RoomTimelineView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private let state: RoomTimelineState
     private let send: (RoomTimelineEvent) -> Void
 
@@ -92,10 +94,12 @@ public struct RoomTimelineView: View {
 
                         ForEach(items) { item in
                             RoomTimelineMessageRow(item: item)
+                                .transition(.opacity.combined(with: .scale(scale: 0.985)))
                         }
                     }
                     .padding(.horizontal, ShadowSpacing.lg)
                     .padding(.vertical, ShadowSpacing.md)
+                    .animation(ShadowMotion.stateTransition(reduceMotion: reduceMotion), value: items.map(\.messageId))
                 }
                 .refreshable {
                     send(.refreshRequested)
