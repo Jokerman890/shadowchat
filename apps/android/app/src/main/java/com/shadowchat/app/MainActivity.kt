@@ -84,17 +84,23 @@ class MainActivity : ComponentActivity() {
         setContent {
             ShadowChatTheme {
                 val chatListViewModel: ChatListViewModel = viewModel(
-                    factory = ChatListViewModelFactory(DemoChatListRepository),
+                    factory = ChatListViewModelFactory(DemoShadowRepositoryProvider.chatListRepository),
                 )
 
-                ShadowChatAppShell(chatListViewModel = chatListViewModel)
+                ShadowChatAppShell(
+                    chatListViewModel = chatListViewModel,
+                    repositoryProvider = DemoShadowRepositoryProvider,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ShadowChatAppShell(chatListViewModel: ChatListViewModel) {
+private fun ShadowChatAppShell(
+    chatListViewModel: ChatListViewModel,
+    repositoryProvider: ShadowRepositoryProvider,
+) {
     var selectedTab by remember { mutableStateOf(AppTab.Chats) }
     var selectedRoomId by remember { mutableStateOf<String?>(null) }
     val motionEnabled = shadowMotionEnabled()
@@ -168,7 +174,7 @@ private fun ShadowChatAppShell(chatListViewModel: ChatListViewModel) {
                                         key = animatedRoomId,
                                         factory = RoomTimelineViewModelFactory(
                                             roomId = animatedRoomId,
-                                            repository = DemoRoomTimelineRepository,
+                                            repository = repositoryProvider.roomTimelineRepository(animatedRoomId),
                                         ),
                                     )
 
