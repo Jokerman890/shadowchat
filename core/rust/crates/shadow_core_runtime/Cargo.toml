@@ -1,0 +1,10 @@
+[package]
+name = "shadow_core_runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+shadow_core_domain = { path = "../shadow_core_domain" }
+thiserror.workspace = true

@@ -3,6 +3,7 @@ members = [
   "crates/shadow_core_domain",
   "crates/shadow_core_auth",
   "crates/shadow_core_session",
+  "crates/shadow_core_runtime",
   "crates/shadow_core_rooms",
   "crates/shadow_core_timeline",
 ]
