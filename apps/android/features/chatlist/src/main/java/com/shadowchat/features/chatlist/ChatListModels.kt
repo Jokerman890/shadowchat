@@ -5,8 +5,11 @@ import com.shadowchat.designsystem.ShadowTrustTone
 data class ChatListItemUi(
     val roomId: String,
     val title: String,
+    val previewText: String = "",
+    val sentAtLabel: String = "",
     val unreadCount: Int,
     val trustLevel: ChatListTrustLevel,
+    val isFavorite: Boolean = false,
 )
 
 enum class ChatListTrustLevel {

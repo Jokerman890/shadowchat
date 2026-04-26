@@ -41,6 +41,8 @@ Startstruktur für ShadowChat im Repo.
 - iOS `ShadowChat` hostet `ShadowChatRootView` aus `ShadowChatAppShell` als Startscreen.
 - Der Chat-Listen-Slice ist buildbar, testbar und ohne Matrix- oder Rust-Bridge verdrahtet.
 - Der Room-Timeline-Shell-Slice liegt als eigenes Android-Feature-Modul und als eigenes iOS SwiftPM-Feature-Target vor.
+- Der Liquid-Glass-UI-Slice erweitert die bestehenden Designsystem-Module um helle Pastell-Hintergründe, Glas-Panels, stärkere Rundungen und Lila-Blau-Akzente.
+- Android und iOS besitzen eine minimale Bottom-Tab-App-Shell; nur `Chats` ist fachlich verdrahtet, `Calls`, `Updates`, `Profile` und `Settings` bleiben reine UI-Shells ohne Produktlogik.
 
 ## Regeln
 - Feature-Grenzen bleiben sichtbar

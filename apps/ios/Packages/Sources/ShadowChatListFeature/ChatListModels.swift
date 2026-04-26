@@ -4,21 +4,30 @@ import ShadowDesignSystem
 public struct ChatListItemViewState: Equatable, Identifiable, Sendable {
     public let roomId: String
     public let title: String
+    public let previewText: String
+    public let sentAtLabel: String
     public let unreadCount: Int
     public let trustLevel: ChatListTrustLevel
+    public let isFavorite: Bool
 
     public var id: String { roomId }
 
     public init(
         roomId: String,
         title: String,
+        previewText: String = "",
+        sentAtLabel: String = "",
         unreadCount: Int,
-        trustLevel: ChatListTrustLevel
+        trustLevel: ChatListTrustLevel,
+        isFavorite: Bool = false
     ) {
         self.roomId = roomId
         self.title = title
+        self.previewText = previewText
+        self.sentAtLabel = sentAtLabel
         self.unreadCount = unreadCount
         self.trustLevel = trustLevel
+        self.isFavorite = isFavorite
     }
 }
 
