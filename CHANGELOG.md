@@ -16,6 +16,7 @@ Das Format orientiert sich an "Keep a Changelog"; die Produktversion folgt `MAJO
 - Matrix-Integration-Readiness-Audit fuer Mobile-, Rust-, FFI-, Repository- und Demo-Data-Grenzen.
 - Matrix Session Contract fuer Session-/Client-Lifecycle, Commands, Events, Errors und FFI-/DTO-Grenzen.
 - Rust Matrix Runtime Skeleton mit app-eigenen Session-Commands, States, Events, DTOs, Errors und No-op-Tests.
+- FFI-/DTO-Surface fuer Session Snapshot, Commands, States, Events, Errors und Capabilities im Rust Runtime Crate.
 
 ### Changed
 

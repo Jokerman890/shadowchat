@@ -31,6 +31,7 @@
 - `technical-design/TD-0012-matrix-integration-readiness-audit.md`
 - `technical-design/TD-0013-matrix-session-contract.md`
 - `technical-design/TD-0014-rust-matrix-runtime-skeleton.md`
+- `technical-design/TD-0015-ffi-dto-surface.md`
 
 ## Architekturentscheidungen
 - `adr/ADR-0001-monorepo.md`
