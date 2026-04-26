@@ -12,10 +12,40 @@ data class ChatListItemUi(
     val isFavorite: Boolean = false,
 )
 
+data class ChatListRoomSummary(
+    val roomId: String,
+    val displayName: String,
+    val lastMessagePreview: String = "",
+    val lastMessageSentAtLabel: String = "",
+    val unreadCount: Int,
+    val trustLevel: ChatListTrustLevel,
+    val membership: ChatListMembership,
+    val isFavorite: Boolean = false,
+    val hasUnreadMentions: Boolean = false,
+) {
+    fun toChatListItemUi(): ChatListItemUi = ChatListItemUi(
+        roomId = roomId,
+        title = displayName,
+        previewText = lastMessagePreview,
+        sentAtLabel = lastMessageSentAtLabel,
+        unreadCount = unreadCount,
+        trustLevel = trustLevel,
+        isFavorite = isFavorite,
+    )
+}
+
 enum class ChatListTrustLevel {
     Verified,
     Standard,
     Reduced,
+}
+
+enum class ChatListMembership {
+    Joined,
+    Invited,
+    Left,
+    Knocked,
+    Banned,
 }
 
 fun ChatListTrustLevel.toDesignTone(): ShadowTrustTone = when (this) {
