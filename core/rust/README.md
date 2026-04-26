@@ -6,6 +6,7 @@ Hier liegt der gemeinsame technische Kern von ShadowChat.
 - Client
 - Auth
 - Session
+- Runtime
 - Sync
 - Rooms
 - Timeline
