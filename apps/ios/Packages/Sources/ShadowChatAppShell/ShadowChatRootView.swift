@@ -4,15 +4,22 @@ import ShadowRoomTimelineFeature
 import SwiftUI
 
 public struct ShadowChatRootView: View {
+    private let repositoryProvider: ShadowRepositoryProvider
+
     @StateObject private var router: ShadowChatRouter
     @StateObject private var chatListViewModel: ChatListViewModel
 
     public init() {
+        self.init(repositoryProvider: DemoShadowRepositoryProvider())
+    }
+
+    private init(repositoryProvider: ShadowRepositoryProvider) {
+        self.repositoryProvider = repositoryProvider
         let router = ShadowChatRouter()
         _router = StateObject(wrappedValue: router)
         _chatListViewModel = StateObject(
             wrappedValue: ChatListViewModel(
-                repository: DemoChatListRepository(),
+                repository: repositoryProvider.makeChatListRepository(),
                 onRoomSelected: { [weak router] roomId in
                     router?.openRoom(roomId)
                 }
@@ -29,7 +36,7 @@ public struct ShadowChatRootView: View {
                             RoomTimelineRoute(
                                 viewModel: RoomTimelineViewModel(
                                     roomId: roomId,
-                                    repository: DemoRoomTimelineRepository()
+                                    repository: repositoryProvider.makeRoomTimelineRepository(roomId: roomId)
                                 )
                             )
                         }
