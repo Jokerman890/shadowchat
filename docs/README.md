@@ -28,6 +28,7 @@
 - `technical-design/TD-0009-subscriptions-billing.md`
 - `technical-design/TD-0010-versioning.md`
 - `technical-design/TD-0011-shell-state-demo-data.md`
+- `technical-design/TD-0012-matrix-integration-readiness-audit.md`
 
 ## Architekturentscheidungen
 - `adr/ADR-0001-monorepo.md`
