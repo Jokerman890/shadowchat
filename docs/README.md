@@ -1,5 +1,9 @@
 # ShadowChat Docs
 
+## Release
+- `../VERSION`
+- `../CHANGELOG.md`
+
 ## Produkt
 - `prd/PRD-shadowchat.md`
 - `prd/scope-mvp.md`
