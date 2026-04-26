@@ -14,7 +14,7 @@ public struct ShadowChatRootView: View {
             wrappedValue: ChatListViewModel(
                 repository: DemoChatListRepository(),
                 onRoomSelected: { [weak router] roomId in
-                    router?.selectedRoomId = roomId
+                    router?.openRoom(roomId)
                 }
             )
         )
@@ -22,19 +22,10 @@ public struct ShadowChatRootView: View {
 
     public var body: some View {
         ShadowLiquidBackground {
-            TabView {
-                NavigationStack {
-                    if let roomId = router.selectedRoomId {
-                        VStack(spacing: ShadowSpacing.sm) {
-                            Button {
-                                router.selectedRoomId = nil
-                            } label: {
-                                Label("Chats", systemImage: "chevron.left")
-                            }
-                            .buttonStyle(.bordered)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, ShadowSpacing.lg)
-
+            TabView(selection: $router.selectedTab) {
+                NavigationStack(path: $router.chatPath) {
+                    ChatListRoute(viewModel: chatListViewModel)
+                        .navigationDestination(for: String.self) { roomId in
                             RoomTimelineRoute(
                                 viewModel: RoomTimelineViewModel(
                                     roomId: roomId,
@@ -42,42 +33,68 @@ public struct ShadowChatRootView: View {
                                 )
                             )
                         }
-                    } else {
-                        ChatListRoute(viewModel: chatListViewModel)
-                    }
                 }
                 .tabItem {
                     Label("Chats", systemImage: "bubble.left.and.bubble.right.fill")
                 }
+                .tag(ShadowShellTab.chats)
 
                 CallsShellView()
                     .tabItem {
                         Label("Calls", systemImage: "phone.fill")
                     }
+                    .tag(ShadowShellTab.calls)
 
                 UpdatesShellView()
                     .tabItem {
                         Label("Updates", systemImage: "sparkles")
                     }
+                    .tag(ShadowShellTab.updates)
 
                 ProfileShellView()
                     .tabItem {
                         Label("Profile", systemImage: "person.crop.circle.fill")
                     }
+                    .tag(ShadowShellTab.profile)
 
                 SettingsShellView()
                     .tabItem {
                         Label("Settings", systemImage: "gearshape.fill")
                     }
+                    .tag(ShadowShellTab.settings)
             }
             .tint(ShadowColors.unreadBadge)
+            .onChange(of: router.selectedTab) { _, tab in
+                if tab != .chats {
+                    router.closeRoom()
+                }
+            }
         }
     }
 }
 
+private enum ShadowShellTab: Hashable {
+    case chats
+    case calls
+    case updates
+    case profile
+    case settings
+}
+
 @MainActor
 private final class ShadowChatRouter: ObservableObject {
-    @Published var selectedRoomId: String?
+    @Published var selectedTab: ShadowShellTab = .chats
+    @Published var chatPath = NavigationPath()
+
+    func openRoom(_ roomId: String) {
+        selectedTab = .chats
+        chatPath = NavigationPath()
+        chatPath.append(roomId)
+    }
+
+    func closeRoom() {
+        chatPath = NavigationPath()
+    }
 }
 
 private struct CallsShellView: View {

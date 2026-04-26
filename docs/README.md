@@ -13,6 +13,8 @@
 ## Design
 - `design/CHAT-DESIGN-MOTION-SPEC.md`
 - `design/DESIGN-TOKENS.md`
+- `design/navigation-flow-liquid-glass.md`
+- `design/visual-review-liquid-glass.md`
 
 ## Technisches Design
 - `technical-design/TD-0001-system-architecture.md`

@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 fun RoomTimelineRoute(
     viewModel: RoomTimelineViewModel,
     modifier: Modifier = Modifier,
+    onBackRequested: (() -> Unit)? = null,
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -21,5 +22,6 @@ fun RoomTimelineRoute(
         state = state,
         onEvent = viewModel::onEvent,
         modifier = modifier,
+        onBackRequested = onBackRequested,
     )
 }

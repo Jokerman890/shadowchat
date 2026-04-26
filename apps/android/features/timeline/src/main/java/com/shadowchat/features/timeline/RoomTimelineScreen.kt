@@ -56,6 +56,7 @@ fun RoomTimelineScreen(
     state: RoomTimelineUiState,
     onEvent: (RoomTimelineEvent) -> Unit,
     modifier: Modifier = Modifier,
+    onBackRequested: (() -> Unit)? = null,
 ) {
     ShadowLiquidBackground(
         modifier = modifier.fillMaxSize(),
@@ -67,7 +68,10 @@ fun RoomTimelineScreen(
                 .padding(top = ShadowSpacing.Xl),
             verticalArrangement = Arrangement.spacedBy(ShadowSpacing.Md),
         ) {
-            TimelineHeader(title = timelineTitle(state))
+            TimelineHeader(
+                title = timelineTitle(state),
+                onBackRequested = onBackRequested,
+            )
 
             when (state) {
                 RoomTimelineUiState.Loading -> RoomTimelineLoadingState()
@@ -84,7 +88,10 @@ fun RoomTimelineScreen(
 }
 
 @Composable
-private fun TimelineHeader(title: String) {
+private fun TimelineHeader(
+    title: String,
+    onBackRequested: (() -> Unit)?,
+) {
     ShadowGlassPanel(radius = ShadowRadii.Panel) {
         Row(
             modifier = Modifier
@@ -93,6 +100,13 @@ private fun TimelineHeader(title: String) {
             horizontalArrangement = Arrangement.spacedBy(ShadowSpacing.Md),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (onBackRequested != null) {
+                HeaderAction(
+                    icon = TimelineActionIcon.Back,
+                    label = stringResource(R.string.room_timeline_back_to_chats),
+                    onClick = onBackRequested,
+                )
+            }
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
@@ -131,8 +145,12 @@ private fun TimelineHeader(title: String) {
 }
 
 @Composable
-private fun HeaderAction(icon: TimelineActionIcon, label: String) {
-    val modifier = Modifier.shadowPressScale()
+private fun HeaderAction(
+    icon: TimelineActionIcon,
+    label: String,
+    onClick: (() -> Unit)? = null,
+) {
+    val modifier = Modifier.shadowPressScale(onClick = onClick)
 
     ShadowGlassPanel(radius = ShadowRadii.Control) {
         TimelineActionIconCanvas(
@@ -336,7 +354,7 @@ private fun ComposerAction(
 }
 
 @Composable
-private fun Modifier.shadowPressScale(): Modifier {
+private fun Modifier.shadowPressScale(onClick: (() -> Unit)? = null): Modifier {
     val motionEnabled = shadowMotionEnabled()
     var pressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
@@ -360,12 +378,16 @@ private fun Modifier.shadowPressScale(): Modifier {
                         pressed = false
                     }
                 },
+                onTap = {
+                    onClick?.invoke()
+                },
             )
         }
 }
 
 private enum class TimelineActionIcon {
     Attach,
+    Back,
     Call,
     Mic,
     Send,
@@ -381,6 +403,22 @@ private fun TimelineActionIconCanvas(
     Canvas(modifier = modifier) {
         val stroke = Stroke(width = 2.2.dp.toPx(), cap = StrokeCap.Round)
         when (icon) {
+            TimelineActionIcon.Back -> {
+                drawLine(
+                    color = color,
+                    start = androidx.compose.ui.geometry.Offset(size.width * 0.68f, size.height * 0.18f),
+                    end = androidx.compose.ui.geometry.Offset(size.width * 0.32f, size.height * 0.5f),
+                    strokeWidth = stroke.width,
+                    cap = StrokeCap.Round,
+                )
+                drawLine(
+                    color = color,
+                    start = androidx.compose.ui.geometry.Offset(size.width * 0.32f, size.height * 0.5f),
+                    end = androidx.compose.ui.geometry.Offset(size.width * 0.68f, size.height * 0.82f),
+                    strokeWidth = stroke.width,
+                    cap = StrokeCap.Round,
+                )
+            }
             TimelineActionIcon.Attach -> {
                 drawLine(
                     color = color,
