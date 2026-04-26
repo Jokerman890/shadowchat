@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
@@ -59,17 +60,32 @@ fun ShadowGlassPanel(
     content: @Composable () -> Unit,
 ) {
     val darkTheme = isSystemInDarkTheme()
+    val shape = RoundedCornerShape(radius)
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(radius),
-        color = if (darkTheme) Color(0xCC1D1A2A) else ShadowColors.GlassSurface,
+        shape = shape,
+        color = if (darkTheme) Color(0xCC1D1A2A) else Color(0xCCFFFFFF),
         contentColor = if (darkTheme) Color(0xFFF7F1FF) else ShadowColors.DeepText,
-        border = BorderStroke(1.dp, if (darkTheme) Color(0x33FFFFFF) else ShadowColors.GlassStroke),
-        shadowElevation = 14.dp,
+        border = BorderStroke(0.7.dp, if (darkTheme) Color(0x33FFFFFF) else Color(0xB3FFFFFF)),
+        shadowElevation = 10.dp,
         tonalElevation = 0.dp,
-        content = content,
-    )
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(shape)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            if (darkTheme) Color(0x1AFFFFFF) else Color(0x80FFFFFF),
+                            Color.Transparent,
+                        ),
+                    ),
+                ),
+        ) {
+            content()
+        }
+    }
 }
 
 fun shadowAccentGradient(): Brush = Brush.horizontalGradient(

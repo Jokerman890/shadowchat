@@ -76,10 +76,21 @@ public struct ShadowGlassPanel<Content: View>: View {
     public var body: some View {
         content
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .background(
+                LinearGradient(
+                    colors: [
+                        .white.opacity(colorScheme == .dark ? 0.10 : 0.42),
+                        .white.opacity(0.02)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                in: RoundedRectangle(cornerRadius: radius, style: .continuous)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .stroke(colorScheme == .dark ? .white.opacity(0.22) : .white.opacity(0.62), lineWidth: 1)
+                    .stroke(colorScheme == .dark ? .white.opacity(0.20) : .white.opacity(0.72), lineWidth: 0.8)
             )
-            .shadow(color: .black.opacity(0.10), radius: 24, x: 0, y: 14)
+            .shadow(color: .black.opacity(0.08), radius: 18, x: 0, y: 10)
     }
 }
