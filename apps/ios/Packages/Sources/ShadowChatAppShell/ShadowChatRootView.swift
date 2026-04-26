@@ -256,9 +256,9 @@ private struct DemoChatListRepository: ChatListRepository {
     func loadChatList() async throws -> [ChatListItemViewState] {
         [
             ChatListItemViewState(roomId: "sofia", title: "Sofia Martin", previewText: "Hey! Are we still on for dinner tonight?", sentAtLabel: "09:41", unreadCount: 2, trustLevel: .verified, isFavorite: true),
-            ChatListItemViewState(roomId: "design-squad", title: "Design Squad", previewText: "Liam: I’ll share the assets here.", sentAtLabel: "09:12", unreadCount: 8, trustLevel: .standard, isFavorite: true),
+            ChatListItemViewState(roomId: "design-squad", title: "Design Squad", previewText: "Liam: I'll share the assets here.", sentAtLabel: "09:12", unreadCount: 8, trustLevel: .standard, isFavorite: true),
             ChatListItemViewState(roomId: "jason", title: "Jason Lee", previewText: "Sounds good, talk soon!", sentAtLabel: "Yesterday", unreadCount: 0, trustLevel: .verified),
-            ChatListItemViewState(roomId: "family", title: "Family", previewText: "Mom: Don’t forget Sunday lunch at grandma’s!", sentAtLabel: "Sun", unreadCount: 4, trustLevel: .standard),
+            ChatListItemViewState(roomId: "family", title: "Family", previewText: "Mom: Don't forget Sunday lunch at grandma's!", sentAtLabel: "Sun", unreadCount: 4, trustLevel: .standard),
             ChatListItemViewState(roomId: "emma", title: "Emma Wilson", previewText: "Looks amazing!", sentAtLabel: "Sat", unreadCount: 1, trustLevel: .verified),
             ChatListItemViewState(roomId: "adventure", title: "Adventure Club", previewText: "Trail photos are ready.", sentAtLabel: "Fri", unreadCount: 0, trustLevel: .reduced),
             ChatListItemViewState(roomId: "noah", title: "Noah Johnson", previewText: "Can you review this later?", sentAtLabel: "Thu", unreadCount: 0, trustLevel: .standard),

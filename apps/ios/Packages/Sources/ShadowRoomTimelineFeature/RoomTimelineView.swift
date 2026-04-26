@@ -51,12 +51,8 @@ public struct RoomTimelineView: View {
 
                 Spacer()
 
-                Image(systemName: "phone.fill")
-                    .foregroundStyle(ShadowColors.unreadBadge)
-                    .accessibilityLabel("Call")
-                Image(systemName: "video.fill")
-                    .foregroundStyle(ShadowColors.unreadBadge)
-                    .accessibilityLabel("Video")
+                HeaderAction(systemName: "phone.fill", label: "Call")
+                HeaderAction(systemName: "video.fill", label: "Video")
             }
             .padding(ShadowSpacing.md)
         }
@@ -143,20 +139,52 @@ public struct RoomTimelineView: View {
     }
 }
 
+private struct HeaderAction: View {
+    let systemName: String
+    let label: String
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(ShadowColors.unreadBadge)
+            .frame(width: 38, height: 38)
+            .background(.ultraThinMaterial, in: Circle())
+            .overlay(Circle().stroke(.white.opacity(0.55), lineWidth: 0.8))
+            .accessibilityLabel(label)
+    }
+}
+
 private struct TimelineComposer: View {
     var body: some View {
         ShadowGlassPanel {
             HStack(spacing: ShadowSpacing.sm) {
+                ComposerIcon(systemName: "plus", label: "Attach")
                 Text("Message shell")
                     .foregroundStyle(ShadowColors.softText)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "paperplane.fill")
-                    .foregroundStyle(ShadowColors.unreadBadge)
-                    .accessibilityLabel("Send")
+                ComposerIcon(systemName: "mic.fill", label: "Voice")
+                ComposerIcon(systemName: "paperplane.fill", label: "Send", emphasized: true)
             }
-            .padding(ShadowSpacing.md)
+            .padding(.horizontal, ShadowSpacing.md)
+            .padding(.vertical, ShadowSpacing.sm)
         }
         .padding(.horizontal, ShadowSpacing.lg)
+    }
+}
+
+private struct ComposerIcon: View {
+    let systemName: String
+    let label: String
+    var emphasized: Bool = false
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(emphasized ? .white : ShadowColors.unreadBadge)
+            .frame(width: 42, height: 42)
+            .background(emphasized ? AnyShapeStyle(shadowAccentGradient) : AnyShapeStyle(.ultraThinMaterial), in: Circle())
+            .overlay(Circle().stroke(.white.opacity(emphasized ? 0.0 : 0.55), lineWidth: 0.8))
+            .accessibilityLabel(label)
     }
 }
 

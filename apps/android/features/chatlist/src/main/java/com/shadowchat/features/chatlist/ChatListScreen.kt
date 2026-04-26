@@ -16,11 +16,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -115,37 +113,52 @@ private fun ChatListHeader() {
         Row(
             horizontalArrangement = Arrangement.spacedBy(ShadowSpacing.Sm),
         ) {
-            OutlinedTextField(
-                value = "",
-                onValueChange = {},
-                readOnly = true,
-                singleLine = true,
-                placeholder = { Text(stringResource(R.string.chat_list_search_placeholder)) },
-                modifier = Modifier.weight(1f),
-            )
+            ShadowGlassPanel(
+                modifier = Modifier.fillMaxWidth(),
+                radius = ShadowRadii.Control,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = ShadowSpacing.Lg, vertical = ShadowSpacing.Md),
+                    horizontalArrangement = Arrangement.spacedBy(ShadowSpacing.Sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.chat_list_search_placeholder),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(ShadowSpacing.Sm),
         ) {
-            AssistChip(
-                onClick = {},
-                label = { Text(stringResource(R.string.chat_list_filter_all)) },
-            )
-            AssistChip(
-                onClick = {},
-                label = { Text(stringResource(R.string.chat_list_filter_unread)) },
-            )
-            AssistChip(
-                onClick = {},
-                label = { Text(stringResource(R.string.chat_list_filter_groups)) },
-            )
-            AssistChip(
-                onClick = {},
-                label = { Text(stringResource(R.string.chat_list_filter_favorites)) },
-            )
+            FilterChipLabel(stringResource(R.string.chat_list_filter_all), selected = true)
+            FilterChipLabel(stringResource(R.string.chat_list_filter_unread), selected = false)
+            FilterChipLabel(stringResource(R.string.chat_list_filter_groups), selected = false)
+            FilterChipLabel(stringResource(R.string.chat_list_filter_favorites), selected = false)
         }
     }
+}
+
+@Composable
+private fun FilterChipLabel(label: String, selected: Boolean) {
+    val chipModifier = if (selected) {
+        Modifier.background(shadowAccentGradient(), CircleShape)
+    } else {
+        Modifier.background(ShadowColors.GlassSurface, CircleShape)
+    }
+
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelLarge,
+        color = if (selected) Color.White else MaterialTheme.colorScheme.onSurface,
+        fontWeight = FontWeight.SemiBold,
+        modifier = chipModifier.padding(horizontal = ShadowSpacing.Md, vertical = ShadowSpacing.Sm),
+    )
 }
 
 @Composable

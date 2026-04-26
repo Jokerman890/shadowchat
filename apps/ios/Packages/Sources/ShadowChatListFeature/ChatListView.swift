@@ -63,10 +63,11 @@ public struct ChatListView: View {
                 .font(.subheadline)
                 .foregroundStyle(ShadowColors.softText)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, ShadowSpacing.md)
-                .padding(.vertical, ShadowSpacing.sm)
+                .padding(.horizontal, ShadowSpacing.lg)
+                .padding(.vertical, ShadowSpacing.md)
                 .background(.ultraThinMaterial, in: Capsule())
-                .overlay(Capsule().stroke(.white.opacity(0.55), lineWidth: 1))
+                .overlay(Capsule().stroke(.white.opacity(0.62), lineWidth: 0.8))
+                .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 5)
         }
     }
 
@@ -77,7 +78,7 @@ public struct ChatListView: View {
             .padding(.horizontal, ShadowSpacing.md)
             .padding(.vertical, ShadowSpacing.sm)
             .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().stroke(.white.opacity(0.55), lineWidth: 1))
+            .overlay(Capsule().stroke(.white.opacity(0.55), lineWidth: 0.8))
     }
 
     @ViewBuilder

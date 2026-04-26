@@ -1,6 +1,7 @@
 package com.shadowchat.features.timeline
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,9 +10,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -21,6 +24,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -107,17 +114,23 @@ private fun TimelineHeader(title: String) {
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Text(
-                text = stringResource(R.string.room_timeline_call_action),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = stringResource(R.string.room_timeline_video_action),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            HeaderAction(icon = TimelineActionIcon.Call, label = stringResource(R.string.room_timeline_call_action))
+            HeaderAction(icon = TimelineActionIcon.Video, label = stringResource(R.string.room_timeline_video_action))
         }
+    }
+}
+
+@Composable
+private fun HeaderAction(icon: TimelineActionIcon, label: String) {
+    ShadowGlassPanel(radius = ShadowRadii.Control) {
+        TimelineActionIconCanvas(
+            icon = icon,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .size(42.dp)
+                .padding(10.dp)
+                .semantics { contentDescription = label },
+        )
     }
 }
 
@@ -208,9 +221,9 @@ private fun MessageBubble(item: RoomTimelineItemUi) {
             )
         }
         Text(
-                text = item.body,
-                style = MaterialTheme.typography.bodyLarge,
-                color = contentColor,
+            text = item.body,
+            style = MaterialTheme.typography.bodyLarge,
+            color = contentColor,
         )
         Row(
             horizontalArrangement = Arrangement.spacedBy(ShadowSpacing.Xs),
@@ -256,20 +269,152 @@ private fun TimelineComposer() {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(ShadowSpacing.Md),
+                .padding(horizontal = ShadowSpacing.Md, vertical = ShadowSpacing.Sm),
             horizontalArrangement = Arrangement.spacedBy(ShadowSpacing.Sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            ComposerAction(
+                icon = TimelineActionIcon.Attach,
+                label = stringResource(R.string.room_timeline_composer_attach),
+            )
             Text(
                 text = stringResource(R.string.room_timeline_composer_placeholder),
                 modifier = Modifier.weight(1f),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                text = stringResource(R.string.room_timeline_composer_send),
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
+            ComposerAction(
+                icon = TimelineActionIcon.Mic,
+                label = stringResource(R.string.room_timeline_composer_mic),
             )
+            ComposerAction(
+                icon = TimelineActionIcon.Send,
+                label = stringResource(R.string.room_timeline_composer_send),
+                emphasized = true,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ComposerAction(
+    icon: TimelineActionIcon,
+    label: String,
+    emphasized: Boolean = false,
+) {
+    val backgroundModifier = if (emphasized) {
+        Modifier.background(shadowAccentGradient(), CircleShape)
+    } else {
+        Modifier.background(ShadowColors.GlassSurface, CircleShape)
+    }
+
+    Box(
+        modifier = Modifier
+            .size(42.dp)
+            .then(backgroundModifier)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        TimelineActionIconCanvas(
+            icon = icon,
+            color = if (emphasized) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp),
+        )
+    }
+}
+
+private enum class TimelineActionIcon {
+    Attach,
+    Call,
+    Mic,
+    Send,
+    Video,
+}
+
+@Composable
+private fun TimelineActionIconCanvas(
+    icon: TimelineActionIcon,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(modifier = modifier) {
+        val stroke = Stroke(width = 2.2.dp.toPx(), cap = StrokeCap.Round)
+        when (icon) {
+            TimelineActionIcon.Attach -> {
+                drawLine(
+                    color = color,
+                    start = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height * 0.2f),
+                    end = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height * 0.8f),
+                    strokeWidth = stroke.width,
+                    cap = StrokeCap.Round,
+                )
+                drawLine(
+                    color = color,
+                    start = androidx.compose.ui.geometry.Offset(size.width * 0.2f, size.height / 2f),
+                    end = androidx.compose.ui.geometry.Offset(size.width * 0.8f, size.height / 2f),
+                    strokeWidth = stroke.width,
+                    cap = StrokeCap.Round,
+                )
+            }
+            TimelineActionIcon.Call -> {
+                val path = Path().apply {
+                    moveTo(size.width * 0.22f, size.height * 0.18f)
+                    cubicTo(size.width * 0.08f, size.height * 0.42f, size.width * 0.28f, size.height * 0.78f, size.width * 0.62f, size.height * 0.9f)
+                    cubicTo(size.width * 0.82f, size.height * 0.98f, size.width * 0.94f, size.height * 0.82f, size.width * 0.84f, size.height * 0.66f)
+                }
+                drawPath(path = path, color = color, style = stroke)
+            }
+            TimelineActionIcon.Mic -> {
+                drawRoundRect(
+                    color = color,
+                    topLeft = androidx.compose.ui.geometry.Offset(size.width * 0.34f, size.height * 0.12f),
+                    size = androidx.compose.ui.geometry.Size(size.width * 0.32f, size.height * 0.48f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.18f),
+                    style = stroke,
+                )
+                drawArc(
+                    color = color,
+                    startAngle = 25f,
+                    sweepAngle = 130f,
+                    useCenter = false,
+                    topLeft = androidx.compose.ui.geometry.Offset(size.width * 0.2f, size.height * 0.34f),
+                    size = androidx.compose.ui.geometry.Size(size.width * 0.6f, size.height * 0.42f),
+                    style = stroke,
+                )
+                drawLine(
+                    color = color,
+                    start = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height * 0.74f),
+                    end = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height * 0.9f),
+                    strokeWidth = stroke.width,
+                    cap = StrokeCap.Round,
+                )
+            }
+            TimelineActionIcon.Send -> {
+                val path = Path().apply {
+                    moveTo(size.width * 0.14f, size.height * 0.18f)
+                    lineTo(size.width * 0.9f, size.height * 0.5f)
+                    lineTo(size.width * 0.14f, size.height * 0.82f)
+                    lineTo(size.width * 0.3f, size.height * 0.52f)
+                    close()
+                }
+                drawPath(path = path, color = color)
+            }
+            TimelineActionIcon.Video -> {
+                drawRoundRect(
+                    color = color,
+                    topLeft = androidx.compose.ui.geometry.Offset(size.width * 0.14f, size.height * 0.28f),
+                    size = androidx.compose.ui.geometry.Size(size.width * 0.5f, size.height * 0.44f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.12f),
+                    style = stroke,
+                )
+                val path = Path().apply {
+                    moveTo(size.width * 0.66f, size.height * 0.44f)
+                    lineTo(size.width * 0.9f, size.height * 0.3f)
+                    lineTo(size.width * 0.9f, size.height * 0.7f)
+                    lineTo(size.width * 0.66f, size.height * 0.56f)
+                    close()
+                }
+                drawPath(path = path, color = color)
+            }
         }
     }
 }

@@ -1,10 +1,11 @@
 package com.shadowchat.app
 
 import android.os.Bundle
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -24,6 +24,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +35,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -63,6 +67,12 @@ import com.shadowchat.features.timeline.RoomTimelineViewModel
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        window.decorView.systemUiVisibility = (
+            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or
+                View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+            )
 
         setContent {
             ShadowChatTheme {
@@ -146,9 +156,9 @@ private fun ShadowBottomBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = ShadowSpacing.Lg, vertical = ShadowSpacing.Md),
+            .padding(horizontal = ShadowSpacing.Lg, vertical = ShadowSpacing.Sm),
     ) {
-        ShadowGlassPanel(radius = ShadowRadii.Panel) {
+        ShadowGlassPanel(radius = 36.dp) {
             NavigationBar(
                 containerColor = Color.Transparent,
                 tonalElevation = ShadowSpacing.Xs,
@@ -158,14 +168,78 @@ private fun ShadowBottomBar(
                         selected = selectedTab == tab,
                         onClick = { onTabSelected(tab) },
                         icon = {
-                            Text(
-                                text = stringResource(tab.symbolResId),
-                                style = MaterialTheme.typography.titleMedium,
-                            )
+                            ShadowTabIcon(tab = tab, selected = selectedTab == tab)
                         },
                         label = { Text(text = stringResource(tab.labelResId)) },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = ShadowColors.IceBlue.copy(alpha = 0.78f),
+                            selectedIconColor = ShadowColors.DeepText,
+                            selectedTextColor = ShadowColors.DeepText,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShadowTabIcon(tab: AppTab, selected: Boolean) {
+    val color = if (selected) ShadowColors.DeepText else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Canvas(modifier = Modifier.size(24.dp)) {
+        val stroke = Stroke(width = 2.4.dp.toPx(), cap = StrokeCap.Round)
+        when (tab) {
+            AppTab.Chats -> {
+                drawRoundRect(
+                    color = color,
+                    topLeft = androidx.compose.ui.geometry.Offset(3.dp.toPx(), 5.dp.toPx()),
+                    size = androidx.compose.ui.geometry.Size(18.dp.toPx(), 13.dp.toPx()),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()),
+                    style = stroke,
+                )
+                drawLine(
+                    color = color,
+                    start = androidx.compose.ui.geometry.Offset(9.dp.toPx(), 18.dp.toPx()),
+                    end = androidx.compose.ui.geometry.Offset(6.dp.toPx(), 21.dp.toPx()),
+                    strokeWidth = 2.4.dp.toPx(),
+                    cap = StrokeCap.Round,
+                )
+            }
+            AppTab.Calls -> {
+                val path = Path().apply {
+                    moveTo(7.dp.toPx(), 5.dp.toPx())
+                    cubicTo(5.dp.toPx(), 8.dp.toPx(), 7.dp.toPx(), 15.dp.toPx(), 12.dp.toPx(), 18.dp.toPx())
+                    cubicTo(16.dp.toPx(), 21.dp.toPx(), 19.dp.toPx(), 20.dp.toPx(), 20.dp.toPx(), 17.dp.toPx())
+                }
+                drawPath(path = path, color = color, style = stroke)
+            }
+            AppTab.Updates -> {
+                drawCircle(color = color, radius = 8.dp.toPx(), style = stroke)
+                drawCircle(color = color, radius = 2.4.dp.toPx())
+            }
+            AppTab.Profile -> {
+                drawCircle(
+                    color = color,
+                    radius = 4.dp.toPx(),
+                    center = androidx.compose.ui.geometry.Offset(12.dp.toPx(), 8.dp.toPx()),
+                    style = stroke,
+                )
+                drawArc(
+                    color = color,
+                    startAngle = 205f,
+                    sweepAngle = 130f,
+                    useCenter = false,
+                    topLeft = androidx.compose.ui.geometry.Offset(5.dp.toPx(), 13.dp.toPx()),
+                    size = androidx.compose.ui.geometry.Size(14.dp.toPx(), 10.dp.toPx()),
+                    style = stroke,
+                )
+            }
+            AppTab.Settings -> {
+                drawCircle(color = color, radius = 8.dp.toPx(), style = stroke)
+                drawCircle(color = color, radius = 2.6.dp.toPx(), style = stroke)
             }
         }
     }
