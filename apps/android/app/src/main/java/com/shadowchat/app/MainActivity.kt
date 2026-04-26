@@ -64,17 +64,11 @@ import com.shadowchat.designsystem.ShadowSpacing
 import com.shadowchat.designsystem.shadowAccentGradient
 import com.shadowchat.designsystem.shadowMotionEnabled
 import com.shadowchat.designsystem.shadowScreenTransitionMillis
-import com.shadowchat.features.chatlist.ChatListItemUi
 import com.shadowchat.features.chatlist.ChatListRepository
 import com.shadowchat.features.chatlist.ChatListRoute
-import com.shadowchat.features.chatlist.ChatListTrustLevel
 import com.shadowchat.features.chatlist.ChatListViewModel
-import com.shadowchat.features.timeline.RoomTimelineDeliveryState
-import com.shadowchat.features.timeline.RoomTimelineItemUi
-import com.shadowchat.features.timeline.RoomTimelineMessageDirection
 import com.shadowchat.features.timeline.RoomTimelineRepository
 import com.shadowchat.features.timeline.RoomTimelineRoute
-import com.shadowchat.features.timeline.RoomTimelineSnapshotUi
 import com.shadowchat.features.timeline.RoomTimelineViewModel
 
 class MainActivity : ComponentActivity() {
@@ -309,48 +303,39 @@ private fun ShadowTabIcon(tab: AppTab, selected: Boolean) {
 @Composable
 private fun CallsShell() {
     ShellScaffold(title = stringResource(R.string.tab_calls), symbol = stringResource(R.string.tab_calls_symbol)) {
-        PillRow(listOf("All", "Missed", "Voicemail"))
-        ShellRow("Sofia Martin", "Outgoing call, today", "Call")
-        ShellRow("Daniel Carter", "Missed call, yesterday", "Call")
-        ShellRow("Adventure Club", "Group call preview", "Call")
+        PillRow(ShadowDemoData.callFilters)
+        ShadowDemoData.callRows.forEach { row ->
+            ShellRow(row.title, row.subtitle, row.trailing)
+        }
     }
 }
 
 @Composable
 private fun UpdatesShell() {
     ShellScaffold(title = stringResource(R.string.tab_updates), symbol = stringResource(R.string.tab_updates_symbol)) {
-        ShellRow("My Status", "Add a soft glass status update", "New")
-        ShellRow("Emma Wilson", "Recent update", "View")
-        ShellRow("Family", "Viewed update", "View")
+        ShadowDemoData.updateRows.forEach { row ->
+            ShellRow(row.title, row.subtitle, row.trailing)
+        }
     }
 }
 
 @Composable
 private fun ProfileShell() {
     ShellScaffold(title = stringResource(R.string.tab_profile), symbol = stringResource(R.string.tab_profile_symbol)) {
-        AvatarHero("Sofia Martin", "Online now")
-        PillRow(listOf("Message", "Call", "Video", "Pay"))
-        ShellRow("About", "Building calm, secure conversations.", "Edit")
-        ShellRow("Media, Links, Docs", "24 shared items", "Open")
-        ShellRow("Starred Messages", "Quick access shell", "Open")
+        AvatarHero(ShadowDemoData.profileHero.name, ShadowDemoData.profileHero.subtitle)
+        PillRow(ShadowDemoData.profileActions)
+        ShadowDemoData.profileRows.forEach { row ->
+            ShellRow(row.title, row.subtitle, row.trailing)
+        }
     }
 }
 
 @Composable
 private fun SettingsShell() {
     ShellScaffold(title = stringResource(R.string.tab_settings), symbol = stringResource(R.string.tab_settings_symbol)) {
-        AvatarHero("ShadowChat", "Premium messenger shell")
-        listOf(
-            "Account",
-            "Privacy",
-            "Notifications",
-            "Appearance",
-            "Chats",
-            "Storage and Data",
-            "Help Center",
-            "Invite Friends",
-        ).forEach { title ->
-            ShellRow(title, "Settings group shell", "Open")
+        AvatarHero(ShadowDemoData.settingsHero.name, ShadowDemoData.settingsHero.subtitle)
+        ShadowDemoData.settingsRows.forEach { row ->
+            ShellRow(row.title, row.subtitle, row.trailing)
         }
     }
 }
@@ -468,35 +453,6 @@ private enum class AppTab(
     Updates(R.string.tab_updates, R.string.tab_updates_symbol),
     Profile(R.string.tab_profile, R.string.tab_profile_symbol),
     Settings(R.string.tab_settings, R.string.tab_settings_symbol),
-}
-
-private object DemoChatListRepository : ChatListRepository {
-    override suspend fun loadChatList(): List<ChatListItemUi> = listOf(
-        ChatListItemUi("sofia", "Sofia Martin", "Hey! Are we still on for dinner tonight?", "09:41", 2, ChatListTrustLevel.Verified, true),
-        ChatListItemUi("design-squad", "Design Squad", "Liam: I will share the assets here.", "09:12", 8, ChatListTrustLevel.Standard, true),
-        ChatListItemUi("jason", "Jason Lee", "Sounds good, talk soon!", "Yesterday", 0, ChatListTrustLevel.Verified),
-        ChatListItemUi("family", "Family", "Mom: Do not forget Sunday lunch at grandma's!", "Sun", 4, ChatListTrustLevel.Standard),
-        ChatListItemUi("emma", "Emma Wilson", "Looks amazing!", "Sat", 1, ChatListTrustLevel.Verified),
-        ChatListItemUi("adventure", "Adventure Club", "Trail photos are ready.", "Fri", 0, ChatListTrustLevel.Reduced),
-        ChatListItemUi("noah", "Noah Johnson", "Can you review this later?", "Thu", 0, ChatListTrustLevel.Standard),
-        ChatListItemUi("daniel", "Daniel Carter", "Call me when you are free.", "Wed", 3, ChatListTrustLevel.Reduced),
-    )
-}
-
-private object DemoRoomTimelineRepository : RoomTimelineRepository {
-    override suspend fun loadTimeline(roomId: String): RoomTimelineSnapshotUi {
-        val title = DemoChatListRepository.loadChatList().firstOrNull { it.roomId == roomId }?.title ?: "Conversation"
-        return RoomTimelineSnapshotUi(
-            roomId = roomId,
-            roomTitle = title,
-            items = listOf(
-                RoomTimelineItemUi("m1", title, "Hey! Are we still on for dinner tonight?", "09:41", RoomTimelineMessageDirection.Incoming, RoomTimelineDeliveryState.Read),
-                RoomTimelineItemUi("m2", null, "Yes. I will be there at 8.", "09:43", RoomTimelineMessageDirection.Outgoing, RoomTimelineDeliveryState.Delivered),
-                RoomTimelineItemUi("m3", title, "Perfect. I saved us a table near the window.", "09:44", RoomTimelineMessageDirection.Incoming, RoomTimelineDeliveryState.Read),
-                RoomTimelineItemUi("m4", null, "Voice preview and media cards will land in the send pipeline slice.", "09:45", RoomTimelineMessageDirection.Outgoing, RoomTimelineDeliveryState.Sent),
-            ),
-        )
-    }
 }
 
 private class ChatListViewModelFactory(
