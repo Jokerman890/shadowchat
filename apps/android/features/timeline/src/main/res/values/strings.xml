@@ -1,5 +1,12 @@
 <resources>
     <string name="room_timeline_default_title">Room</string>
+    <string name="room_timeline_room_symbol">SC</string>
+    <string name="room_timeline_shell_label">Timeline shell</string>
+    <string name="room_timeline_call_action">Call</string>
+    <string name="room_timeline_video_action">Video</string>
+    <string name="room_timeline_day_today">Today</string>
+    <string name="room_timeline_composer_placeholder">Message shell</string>
+    <string name="room_timeline_composer_send">Send</string>
     <string name="room_timeline_loading">Loading messages</string>
     <string name="room_timeline_empty_title">No messages yet</string>
     <string name="room_timeline_empty_body">Messages in this room will appear here.</string>

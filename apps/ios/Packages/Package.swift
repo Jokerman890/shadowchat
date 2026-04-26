@@ -41,7 +41,8 @@ let package = Package(
             name: "ShadowChatAppShell",
             dependencies: [
                 "ShadowDesignSystem",
-                "ShadowChatListFeature"
+                "ShadowChatListFeature",
+                "ShadowRoomTimelineFeature"
             ]
         ),
         .testTarget(

@@ -28,6 +28,7 @@ android {
 dependencies {
     implementation(project(":designsystem"))
     implementation(project(":features:chatlist"))
+    implementation(project(":features:timeline"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

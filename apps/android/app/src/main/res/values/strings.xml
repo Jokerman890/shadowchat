@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">ShadowChat</string>
+    <string name="tab_chats">Chats</string>
+    <string name="tab_calls">Calls</string>
+    <string name="tab_updates">Updates</string>
+    <string name="tab_profile">Profile</string>
+    <string name="tab_settings">Settings</string>
+    <string name="tab_chats_symbol">Chat</string>
+    <string name="tab_calls_symbol">Call</string>
+    <string name="tab_updates_symbol">News</string>
+    <string name="tab_profile_symbol">Me</string>
+    <string name="tab_settings_symbol">Gear</string>
+    <string name="timeline_back_to_chats">Chats</string>
+    <string name="tab_chats_body">Your conversations stay on the main screen.</string>
+    <string name="tab_calls_body">Call surfaces will live here once the calls slice is implemented.</string>
+    <string name="tab_updates_body">Updates will live here once the updates slice is implemented.</string>
+    <string name="tab_profile_body">Profile controls will live here once the profile slice is implemented.</string>
+    <string name="tab_settings_body">App settings will live here once the settings slice is implemented.</string>
 </resources>

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,7 +27,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.shadowchat.designsystem.ShadowColors
+import com.shadowchat.designsystem.ShadowGlassPanel
+import com.shadowchat.designsystem.ShadowLiquidBackground
+import com.shadowchat.designsystem.ShadowRadii
 import com.shadowchat.designsystem.ShadowSpacing
+import com.shadowchat.designsystem.shadowAccentGradient
 
 @Composable
 fun RoomTimelineScreen(
@@ -35,22 +40,17 @@ fun RoomTimelineScreen(
     onEvent: (RoomTimelineEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
+    ShadowLiquidBackground(
         modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = ShadowSpacing.Lg),
+                .padding(horizontal = ShadowSpacing.Lg)
+                .padding(top = ShadowSpacing.Xl),
+            verticalArrangement = Arrangement.spacedBy(ShadowSpacing.Md),
         ) {
-            Text(
-                text = timelineTitle(state),
-                style = MaterialTheme.typography.headlineSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = ShadowSpacing.Xl, bottom = ShadowSpacing.Md),
-            )
+            TimelineHeader(title = timelineTitle(state))
 
             when (state) {
                 RoomTimelineUiState.Loading -> RoomTimelineLoadingState()
@@ -58,6 +58,65 @@ fun RoomTimelineScreen(
                 is RoomTimelineUiState.Empty -> RoomTimelineEmptyState()
                 RoomTimelineUiState.Error -> RoomTimelineErrorState(onEvent = onEvent)
             }
+
+            if (state is RoomTimelineUiState.Loaded) {
+                TimelineComposer()
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimelineHeader(title: String) {
+    ShadowGlassPanel(radius = ShadowRadii.Panel) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(ShadowSpacing.Md),
+            horizontalArrangement = Arrangement.spacedBy(ShadowSpacing.Md),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(shadowAccentGradient())
+                    .padding(horizontal = ShadowSpacing.Md, vertical = ShadowSpacing.Sm),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.room_timeline_room_symbol),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = stringResource(R.string.room_timeline_shell_label),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                text = stringResource(R.string.room_timeline_call_action),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = stringResource(R.string.room_timeline_video_action),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }
@@ -71,11 +130,27 @@ private fun timelineTitle(state: RoomTimelineUiState): String = when (state) {
 }
 
 @Composable
-private fun RoomTimelineLoadedState(items: List<RoomTimelineItemUi>) {
+private fun ColumnScope.RoomTimelineLoadedState(items: List<RoomTimelineItemUi>) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(ShadowSpacing.Sm),
+        modifier = Modifier.weight(1f),
+        verticalArrangement = Arrangement.spacedBy(ShadowSpacing.Md),
     ) {
+        item {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.room_timeline_day_today),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .background(ShadowColors.GlassSurface, RoundedCornerShape(20.dp))
+                        .padding(horizontal = ShadowSpacing.Md, vertical = ShadowSpacing.Xs),
+                )
+            }
+        }
+
         items(
             items = items,
             key = { item -> item.messageId },
@@ -105,23 +180,23 @@ private fun MessageBubble(item: RoomTimelineItemUi) {
     val isOutgoing = item.direction == RoomTimelineMessageDirection.Outgoing
     val accessibilityLabel = messageAccessibilityLabel(item)
     val bubbleColor = if (isOutgoing) {
-        MaterialTheme.colorScheme.primaryContainer
+        ShadowColors.OutgoingBubble
     } else {
-        MaterialTheme.colorScheme.surfaceVariant
+        ShadowColors.IncomingBubble
     }
     val contentColor = if (isOutgoing) {
-        MaterialTheme.colorScheme.onPrimaryContainer
+        MaterialTheme.colorScheme.onSurface
     } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+        MaterialTheme.colorScheme.onSurface
     }
 
     Column(
         modifier = Modifier
             .widthIn(max = 320.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(ShadowRadii.Bubble))
             .background(bubbleColor)
             .semantics { contentDescription = accessibilityLabel }
-            .padding(horizontal = ShadowSpacing.Md, vertical = ShadowSpacing.Sm),
+            .padding(horizontal = ShadowSpacing.Lg, vertical = ShadowSpacing.Md),
         verticalArrangement = Arrangement.spacedBy(ShadowSpacing.Xs),
     ) {
         if (!isOutgoing && item.senderDisplayName != null) {
@@ -133,9 +208,9 @@ private fun MessageBubble(item: RoomTimelineItemUi) {
             )
         }
         Text(
-            text = item.body,
-            style = MaterialTheme.typography.bodyLarge,
-            color = contentColor,
+                text = item.body,
+                style = MaterialTheme.typography.bodyLarge,
+                color = contentColor,
         )
         Row(
             horizontalArrangement = Arrangement.spacedBy(ShadowSpacing.Xs),
@@ -144,12 +219,12 @@ private fun MessageBubble(item: RoomTimelineItemUi) {
             Text(
                 text = item.sentAtLabel,
                 style = MaterialTheme.typography.labelSmall,
-                color = contentColor.copy(alpha = 0.74f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = deliveryStateLabel(item.deliveryState),
                 style = MaterialTheme.typography.labelSmall,
-                color = contentColor.copy(alpha = 0.74f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -163,11 +238,39 @@ private fun RoomTimelineLoadingState() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator(
-            modifier = Modifier.semantics {
-                contentDescription = loadingLabel
-            },
-        )
+        ShadowGlassPanel(radius = ShadowRadii.Panel) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .padding(ShadowSpacing.Xl)
+                    .semantics {
+                        contentDescription = loadingLabel
+                    },
+            )
+        }
+    }
+}
+
+@Composable
+private fun TimelineComposer() {
+    ShadowGlassPanel(radius = ShadowRadii.Panel) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(ShadowSpacing.Md),
+            horizontalArrangement = Arrangement.spacedBy(ShadowSpacing.Sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.room_timeline_composer_placeholder),
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(R.string.room_timeline_composer_send),
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+            )
+        }
     }
 }
 
@@ -177,19 +280,27 @@ private fun RoomTimelineEmptyState() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(ShadowSpacing.Sm),
+        ShadowGlassPanel(
+            modifier = Modifier.widthIn(max = 360.dp),
+            radius = ShadowRadii.Panel,
         ) {
-            Text(
-                text = stringResource(R.string.room_timeline_empty_title),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = stringResource(R.string.room_timeline_empty_body),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Column(
+                modifier = Modifier.padding(ShadowSpacing.Xl),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(ShadowSpacing.Sm),
+            ) {
+                Text(
+                    text = stringResource(R.string.room_timeline_empty_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = stringResource(R.string.room_timeline_empty_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -200,21 +311,29 @@ private fun RoomTimelineErrorState(onEvent: (RoomTimelineEvent) -> Unit) {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(ShadowSpacing.Md),
+        ShadowGlassPanel(
+            modifier = Modifier.widthIn(max = 360.dp),
+            radius = ShadowRadii.Panel,
         ) {
-            Text(
-                text = stringResource(R.string.room_timeline_error_title),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = stringResource(R.string.room_timeline_error_body),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Button(onClick = { onEvent(RoomTimelineEvent.RetryRequested) }) {
-                Text(text = stringResource(R.string.room_timeline_retry))
+            Column(
+                modifier = Modifier.padding(ShadowSpacing.Xl),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(ShadowSpacing.Md),
+            ) {
+                Text(
+                    text = stringResource(R.string.room_timeline_error_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = stringResource(R.string.room_timeline_error_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(onClick = { onEvent(RoomTimelineEvent.RetryRequested) }) {
+                    Text(text = stringResource(R.string.room_timeline_retry))
+                }
             }
         }
     }

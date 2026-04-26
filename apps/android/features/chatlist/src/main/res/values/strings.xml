@@ -1,5 +1,12 @@
 <resources>
     <string name="chat_list_title">Chats</string>
+    <string name="chat_list_subtitle">Private rooms, soft signals, clear trust.</string>
+    <string name="chat_list_compose_symbol">+</string>
+    <string name="chat_list_search_placeholder">Search conversations</string>
+    <string name="chat_list_filter_all">All</string>
+    <string name="chat_list_filter_unread">Unread</string>
+    <string name="chat_list_filter_groups">Groups</string>
+    <string name="chat_list_filter_favorites">Favorites</string>
     <string name="chat_list_loading">Loading chats</string>
     <string name="chat_list_empty_title">No chats yet</string>
     <string name="chat_list_empty_body">New conversations will appear here.</string>
@@ -15,4 +22,7 @@
     <string name="chat_list_trust_verified">verified trust</string>
     <string name="chat_list_trust_standard">standard trust</string>
     <string name="chat_list_trust_reduced">reduced trust</string>
+    <string name="chat_list_preview_verified">Verified secure conversation</string>
+    <string name="chat_list_preview_standard">Standard private conversation</string>
+    <string name="chat_list_preview_reduced">Reduced trust context</string>
 </resources>
