@@ -19,3 +19,4 @@ rootProject.name = "ShadowChatAndroid"
 include(":app")
 include(":designsystem")
 include(":features:chatlist")
+include(":features:timeline")

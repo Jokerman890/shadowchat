@@ -27,6 +27,9 @@ Kritische Produktflüsse werden vor visuellen Extras abgesichert.
   - `./gradlew assembleDebug`
   - `./gradlew testDebugUnitTest`
   - `./gradlew lint`
+- Android Room-Timeline-Shell:
+  - `cd apps/android`
+  - `./gradlew :features:timeline:testDebugUnitTest`
 - iOS Packages:
   - `cd apps/ios/Packages`
   - `xcodebuild -list`
