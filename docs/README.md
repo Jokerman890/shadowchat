@@ -33,6 +33,7 @@
 - `technical-design/TD-0014-rust-matrix-runtime-skeleton.md`
 - `technical-design/TD-0015-ffi-dto-surface.md`
 - `technical-design/TD-0016-mobile-repository-swap-boundary.md`
+- `technical-design/TD-0017-room-list-adapter-contract.md`
 
 ## Architekturentscheidungen
 - `adr/ADR-0001-monorepo.md`

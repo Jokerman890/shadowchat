@@ -18,6 +18,7 @@ Das Format orientiert sich an "Keep a Changelog"; die Produktversion folgt `MAJO
 - Rust Matrix Runtime Skeleton mit app-eigenen Session-Commands, States, Events, DTOs, Errors und No-op-Tests.
 - FFI-/DTO-Surface fuer Session Snapshot, Commands, States, Events, Errors und Capabilities im Rust Runtime Crate.
 - Mobile Repository Swap Boundary fuer Android und iOS, damit Demo-Repositories spaeter gegen FFI-backed Repositories getauscht werden koennen.
+- Room List Adapter Contract fuer Rust/Core und Mobile-Mapping-Modelle als Vorbereitung auf spaetere Matrix Room List Integration.
 
 ### Changed
 
