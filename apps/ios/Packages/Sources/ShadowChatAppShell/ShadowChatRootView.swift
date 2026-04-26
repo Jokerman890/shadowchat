@@ -100,10 +100,10 @@ private final class ShadowChatRouter: ObservableObject {
 private struct CallsShellView: View {
     var body: some View {
         ShellScreen(title: "Calls", symbolName: "phone.fill") {
-            PillRow(labels: ["All", "Missed", "Voicemail"])
-            ShellRow(title: "Sofia Martin", subtitle: "Outgoing call, today", trailing: "Call")
-            ShellRow(title: "Daniel Carter", subtitle: "Missed call, yesterday", trailing: "Call")
-            ShellRow(title: "Adventure Club", subtitle: "Group call preview", trailing: "Call")
+            PillRow(labels: ShadowDemoData.callFilters)
+            ForEach(ShadowDemoData.callRows) { row in
+                ShellRow(title: row.title, subtitle: row.subtitle, trailing: row.trailing)
+            }
         }
     }
 }
@@ -111,9 +111,9 @@ private struct CallsShellView: View {
 private struct UpdatesShellView: View {
     var body: some View {
         ShellScreen(title: "Updates", symbolName: "sparkles") {
-            ShellRow(title: "My Status", subtitle: "Add a soft glass status update", trailing: "New")
-            ShellRow(title: "Emma Wilson", subtitle: "Recent update", trailing: "View")
-            ShellRow(title: "Family", subtitle: "Viewed update", trailing: "View")
+            ForEach(ShadowDemoData.updateRows) { row in
+                ShellRow(title: row.title, subtitle: row.subtitle, trailing: row.trailing)
+            }
         }
     }
 }
@@ -121,11 +121,11 @@ private struct UpdatesShellView: View {
 private struct ProfileShellView: View {
     var body: some View {
         ShellScreen(title: "Profile", symbolName: "person.crop.circle.fill") {
-            AvatarHero(name: "Sofia Martin", subtitle: "Online now")
-            PillRow(labels: ["Message", "Call", "Video", "Pay"])
-            ShellRow(title: "About", subtitle: "Building calm, secure conversations.", trailing: "Edit")
-            ShellRow(title: "Media, Links, Docs", subtitle: "24 shared items", trailing: "Open")
-            ShellRow(title: "Starred Messages", subtitle: "Quick access shell", trailing: "Open")
+            AvatarHero(name: ShadowDemoData.profileHero.name, subtitle: ShadowDemoData.profileHero.subtitle)
+            PillRow(labels: ShadowDemoData.profileActions)
+            ForEach(ShadowDemoData.profileRows) { row in
+                ShellRow(title: row.title, subtitle: row.subtitle, trailing: row.trailing)
+            }
         }
     }
 }
@@ -133,18 +133,9 @@ private struct ProfileShellView: View {
 private struct SettingsShellView: View {
     var body: some View {
         ShellScreen(title: "Settings", symbolName: "gearshape.fill") {
-            AvatarHero(name: "ShadowChat", subtitle: "Premium messenger shell")
-            ForEach([
-                "Account",
-                "Privacy",
-                "Notifications",
-                "Appearance",
-                "Chats",
-                "Storage and Data",
-                "Help Center",
-                "Invite Friends"
-            ], id: \.self) { title in
-                ShellRow(title: title, subtitle: "Settings group shell", trailing: "Open")
+            AvatarHero(name: ShadowDemoData.settingsHero.name, subtitle: ShadowDemoData.settingsHero.subtitle)
+            ForEach(ShadowDemoData.settingsRows) { row in
+                ShellRow(title: row.title, subtitle: row.subtitle, trailing: row.trailing)
             }
         }
     }
@@ -266,39 +257,6 @@ private struct DemoAvatar: View {
             .foregroundStyle(.white)
             .frame(width: 52, height: 52)
             .background(shadowAccentGradient, in: Circle())
-    }
-}
-
-private struct DemoChatListRepository: ChatListRepository {
-    func loadChatList() async throws -> [ChatListItemViewState] {
-        [
-            ChatListItemViewState(roomId: "sofia", title: "Sofia Martin", previewText: "Hey! Are we still on for dinner tonight?", sentAtLabel: "09:41", unreadCount: 2, trustLevel: .verified, isFavorite: true),
-            ChatListItemViewState(roomId: "design-squad", title: "Design Squad", previewText: "Liam: I'll share the assets here.", sentAtLabel: "09:12", unreadCount: 8, trustLevel: .standard, isFavorite: true),
-            ChatListItemViewState(roomId: "jason", title: "Jason Lee", previewText: "Sounds good, talk soon!", sentAtLabel: "Yesterday", unreadCount: 0, trustLevel: .verified),
-            ChatListItemViewState(roomId: "family", title: "Family", previewText: "Mom: Don't forget Sunday lunch at grandma's!", sentAtLabel: "Sun", unreadCount: 4, trustLevel: .standard),
-            ChatListItemViewState(roomId: "emma", title: "Emma Wilson", previewText: "Looks amazing!", sentAtLabel: "Sat", unreadCount: 1, trustLevel: .verified),
-            ChatListItemViewState(roomId: "adventure", title: "Adventure Club", previewText: "Trail photos are ready.", sentAtLabel: "Fri", unreadCount: 0, trustLevel: .reduced),
-            ChatListItemViewState(roomId: "noah", title: "Noah Johnson", previewText: "Can you review this later?", sentAtLabel: "Thu", unreadCount: 0, trustLevel: .standard),
-            ChatListItemViewState(roomId: "daniel", title: "Daniel Carter", previewText: "Call me when you are free.", sentAtLabel: "Wed", unreadCount: 3, trustLevel: .reduced)
-        ]
-    }
-}
-
-private struct DemoRoomTimelineRepository: RoomTimelineRepository {
-    func loadTimeline(roomId: String) async throws -> RoomTimelineSnapshotViewState {
-        let rooms = try await DemoChatListRepository().loadChatList()
-        let title = rooms.first { $0.roomId == roomId }?.title ?? "Conversation"
-
-        return RoomTimelineSnapshotViewState(
-            roomId: roomId,
-            roomTitle: title,
-            items: [
-                RoomTimelineItemViewState(messageId: "m1", senderDisplayName: title, body: "Hey! Are we still on for dinner tonight?", sentAtLabel: "09:41", direction: .incoming, deliveryState: .read),
-                RoomTimelineItemViewState(messageId: "m2", senderDisplayName: nil, body: "Yes. I will be there at 8.", sentAtLabel: "09:43", direction: .outgoing, deliveryState: .delivered),
-                RoomTimelineItemViewState(messageId: "m3", senderDisplayName: title, body: "Perfect. I saved us a table near the window.", sentAtLabel: "09:44", direction: .incoming, deliveryState: .read),
-                RoomTimelineItemViewState(messageId: "m4", senderDisplayName: nil, body: "Voice preview and media cards will land in the send pipeline slice.", sentAtLabel: "09:45", direction: .outgoing, deliveryState: .sent)
-            ]
-        )
     }
 }
 

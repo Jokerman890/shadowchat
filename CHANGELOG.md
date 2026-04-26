@@ -20,6 +20,7 @@ Das Format orientiert sich an "Keep a Changelog"; die Produktversion folgt `MAJO
 - Mobile UI-Dokumentation beschreibt die verbleibenden visuellen Polish-Punkte.
 - Motion- und Interaktionsverhalten fuer Mobile Shell, Chat-Liste und Timeline wurde mit kurzen, Reduce-Motion-bewussten Uebergaengen verfeinert.
 - Lokale Shell-Navigation zwischen Chat-Liste und Timeline wurde fuer Android und iOS plattformnaeher gepolisht.
+- Runtime-Demo-Daten und lokale InMemory-Repositories der Mobile App-Shell wurden fuer Android und iOS gekapselt.
 
 ### Known Gaps
 

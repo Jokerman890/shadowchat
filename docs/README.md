@@ -27,6 +27,7 @@
 - `technical-design/TD-0008-mobile-repo-structure.md`
 - `technical-design/TD-0009-subscriptions-billing.md`
 - `technical-design/TD-0010-versioning.md`
+- `technical-design/TD-0011-shell-state-demo-data.md`
 
 ## Architekturentscheidungen
 - `adr/ADR-0001-monorepo.md`
