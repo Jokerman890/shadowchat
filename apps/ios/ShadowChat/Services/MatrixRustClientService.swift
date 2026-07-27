@@ -12,6 +12,18 @@ actor MatrixRustClientService: ShadowClientService {
     var sessionSnapshot: ShadowSessionSnapshot
     var timelines: [String: MatrixTimelineContext] = [:]
     var pendingAuthentication: MatrixPendingAuthentication?
+    var securitySnapshotValue = ShadowSecuritySnapshot.unknown
+    var verificationController: SessionVerificationController?
+    var verificationDelegate: MatrixSessionVerificationDelegate?
+    var verificationStateListener: TaskHandle?
+    var recoveryStateListener: TaskHandle?
+    var backupStateListener: TaskHandle?
+    var securityContinuations: [
+        UUID: AsyncStream<ShadowSecuritySnapshot>.Continuation
+    ] = [:]
+    var verificationContinuations: [
+        UUID: AsyncStream<ShadowDeviceVerificationUpdate>.Continuation
+    ] = [:]
 
     init(keychain: MatrixSessionKeychain = MatrixSessionKeychain()) {
         self.keychain = keychain
@@ -188,6 +200,7 @@ actor MatrixRustClientService: ShadowClientService {
         }
 
         client = nil
+        resetSecurityState()
         if eraseLocalData {
             try keychain.removeActiveToken()
             try activeToken?.directories.remove()

@@ -143,6 +143,68 @@ public struct ShadowLoginRequest: Equatable, Sendable {
     }
 }
 
+public enum ShadowDeviceTrustState: String, Codable, Sendable {
+    case unknown
+    case unverified
+    case verified
+}
+
+public enum ShadowRecoveryState: String, Codable, Sendable {
+    case unknown
+    case disabled
+    case incomplete
+    case settingUp
+    case enabled
+}
+
+public enum ShadowKeyBackupState: String, Codable, Sendable {
+    case unknown
+    case enabling
+    case enabled
+    case disabling
+}
+
+public struct ShadowSecuritySnapshot: Codable, Equatable, Sendable {
+    public let deviceTrust: ShadowDeviceTrustState
+    public let recovery: ShadowRecoveryState
+    public let keyBackup: ShadowKeyBackupState
+
+    public init(
+        deviceTrust: ShadowDeviceTrustState,
+        recovery: ShadowRecoveryState,
+        keyBackup: ShadowKeyBackupState
+    ) {
+        self.deviceTrust = deviceTrust
+        self.recovery = recovery
+        self.keyBackup = keyBackup
+    }
+
+    public static let unknown = ShadowSecuritySnapshot(
+        deviceTrust: .unknown,
+        recovery: .unknown,
+        keyBackup: .unknown
+    )
+}
+
+public struct ShadowVerificationEmoji: Equatable, Hashable, Sendable {
+    public let symbol: String
+    public let description: String
+
+    public init(symbol: String, description: String) {
+        self.symbol = symbol
+        self.description = description
+    }
+}
+
+public enum ShadowDeviceVerificationUpdate: Equatable, Sendable {
+    case requested
+    case accepted
+    case comparing([ShadowVerificationEmoji])
+    case verified
+    case cancelled
+    case failed
+}
+
 public enum ShadowServiceError: LocalizedError, Equatable, Sendable {
     case invalidHomeserver
     case invalidCredentials

@@ -37,4 +37,19 @@ public protocol ShadowBridgeService: Actor {
     func puppets(for bridge: ShadowBridgeKind) async throws -> [ShadowUserPuppet]
 }
 
-public protocol ShadowClientService: ShadowSessionService, ShadowBridgeService {}
+public protocol ShadowSecurityService: Actor {
+    func securitySnapshot() async throws -> ShadowSecuritySnapshot
+    func securityUpdates() async -> AsyncStream<ShadowSecuritySnapshot>
+    func deviceVerificationUpdates() async -> AsyncStream<ShadowDeviceVerificationUpdate>
+    func beginDeviceVerification() async throws
+    func approveDeviceVerification() async throws
+    func declineDeviceVerification() async throws
+    func cancelDeviceVerification() async
+    func generateRecoveryKey(passphrase: String?) async throws -> String
+    func recoverEncryption(recoveryKey: String) async throws -> ShadowSecuritySnapshot
+}
+
+public protocol ShadowClientService:
+    ShadowSessionService,
+    ShadowBridgeService,
+    ShadowSecurityService {}

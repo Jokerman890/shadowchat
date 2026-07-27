@@ -8,6 +8,7 @@ struct ShadowSettingsView: View {
     @State private var appLockEnabled = true
     @State private var readReceiptsEnabled = true
     @State private var linkPreviewsEnabled = false
+    @State private var presentsSecurityCenter = false
 
     var body: some View {
         NavigationStack {
@@ -35,9 +36,13 @@ struct ShadowSettingsView: View {
 
                         Label(
                             "Gerät: \(appState.session.account?.deviceID ?? "Nicht registriert")",
-                            systemImage: "checkmark.shield.fill"
+                            systemImage: appState.security.deviceTrust.symbolName
                         )
-                        .foregroundStyle(ShadowColors.whatsAppGreen)
+                        .foregroundStyle(appState.security.deviceTrust.tint)
+
+                        Button("Verschlüsselung verwalten") {
+                            presentsSecurityCenter = true
+                        }
                     }
 
                     Section("Vertrauen") {
@@ -58,6 +63,33 @@ struct ShadowSettingsView: View {
                 .scrollContentBackground(.hidden)
             }
             .navigationTitle("Einstellungen")
+            .sheet(isPresented: $presentsSecurityCenter) {
+                ShadowSecurityCenterView(appState: appState)
+            }
+        }
+    }
+}
+
+private extension ShadowDeviceTrustState {
+    var symbolName: String {
+        switch self {
+        case .unknown:
+            "shield.lefthalf.filled"
+        case .unverified:
+            "exclamationmark.shield.fill"
+        case .verified:
+            "checkmark.shield.fill"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .unknown:
+            ShadowColors.softText
+        case .unverified:
+            .orange
+        case .verified:
+            ShadowColors.whatsAppGreen
         }
     }
 }

@@ -10,10 +10,15 @@ public final class ShadowAppState {
     public private(set) var bridges: [ShadowBridgeSnapshot]
     public private(set) var activePairingSession: ShadowPairingSession?
     public private(set) var authenticationDiscovery: ShadowAuthenticationDiscovery?
+    public private(set) var security: ShadowSecuritySnapshot
+    public private(set) var verificationUpdate: ShadowDeviceVerificationUpdate?
+    public private(set) var generatedRecoveryKey: String?
     public private(set) var isBusy: Bool
     public private(set) var errorMessage: String?
 
     private let clientService: any ShadowClientService
+    private var securityObservationTask: Task<Void, Never>?
+    private var verificationObservationTask: Task<Void, Never>?
 
     public init(clientService: any ShadowClientService) {
         self.clientService = clientService
@@ -22,6 +27,7 @@ public final class ShadowAppState {
             environment: clientService.runtimeEnvironment
         )
         bridges = []
+        security = .unknown
         isBusy = false
     }
 
@@ -38,6 +44,7 @@ public final class ShadowAppState {
             if let restored = try await clientService.restoreSession() {
                 session = restored
                 session = try await clientService.startSync()
+                startSecurityObservation()
                 await refreshBridges()
             } else {
                 session = await clientService.currentSession()
@@ -64,6 +71,7 @@ public final class ShadowAppState {
         do {
             session = try await clientService.signIn(request)
             session = try await clientService.startSync()
+            startSecurityObservation()
             await refreshBridges()
         } catch {
             present(error)
@@ -125,6 +133,7 @@ public final class ShadowAppState {
             )
             session = try await clientService.startSync()
             authenticationDiscovery = nil
+            startSecurityObservation()
             await refreshBridges()
         } catch {
             present(error)
@@ -165,6 +174,13 @@ public final class ShadowAppState {
             session = try await clientService.signOut(eraseLocalData: true)
             bridges = []
             activePairingSession = nil
+            securityObservationTask?.cancel()
+            verificationObservationTask?.cancel()
+            securityObservationTask = nil
+            verificationObservationTask = nil
+            security = .unknown
+            verificationUpdate = nil
+            generatedRecoveryKey = nil
         } catch {
             present(error)
         }
@@ -234,6 +250,93 @@ public final class ShadowAppState {
         }
     }
 
+    public func refreshSecurity() async {
+        do {
+            security = try await clientService.securitySnapshot()
+        } catch {
+            present(error)
+        }
+    }
+
+    public func beginDeviceVerification() async {
+        guard !isBusy else { return }
+        isBusy = true
+        errorMessage = nil
+        verificationUpdate = nil
+        defer { isBusy = false }
+
+        do {
+            try await clientService.beginDeviceVerification()
+        } catch {
+            present(error)
+        }
+    }
+
+    public func approveDeviceVerification() async {
+        guard !isBusy else { return }
+        isBusy = true
+        defer { isBusy = false }
+
+        do {
+            try await clientService.approveDeviceVerification()
+        } catch {
+            present(error)
+        }
+    }
+
+    public func declineDeviceVerification() async {
+        guard !isBusy else { return }
+        isBusy = true
+        defer { isBusy = false }
+
+        do {
+            try await clientService.declineDeviceVerification()
+        } catch {
+            present(error)
+        }
+    }
+
+    public func cancelDeviceVerification() async {
+        await clientService.cancelDeviceVerification()
+        verificationUpdate = nil
+    }
+
+    public func generateRecoveryKey() async {
+        guard !isBusy else { return }
+        isBusy = true
+        errorMessage = nil
+        defer { isBusy = false }
+
+        do {
+            generatedRecoveryKey = try await clientService
+                .generateRecoveryKey(passphrase: nil)
+            security = try await clientService.securitySnapshot()
+        } catch {
+            present(error)
+        }
+    }
+
+    public func recoverEncryption(recoveryKey: String) async -> Bool {
+        guard !isBusy else { return false }
+        isBusy = true
+        errorMessage = nil
+        defer { isBusy = false }
+
+        do {
+            security = try await clientService.recoverEncryption(
+                recoveryKey: recoveryKey
+            )
+            return true
+        } catch {
+            present(error)
+            return false
+        }
+    }
+
+    public func clearGeneratedRecoveryKey() {
+        generatedRecoveryKey = nil
+    }
+
     public func clearError() {
         errorMessage = nil
     }
@@ -244,6 +347,27 @@ public final class ShadowAppState {
             errorMessage = description
         } else {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private func startSecurityObservation() {
+        securityObservationTask?.cancel()
+        verificationObservationTask?.cancel()
+
+        securityObservationTask = Task { [weak self, clientService] in
+            let updates = await clientService.securityUpdates()
+            for await snapshot in updates {
+                guard !Task.isCancelled else { return }
+                self?.security = snapshot
+            }
+        }
+
+        verificationObservationTask = Task { [weak self, clientService] in
+            let updates = await clientService.deviceVerificationUpdates()
+            for await update in updates {
+                guard !Task.isCancelled else { return }
+                self?.verificationUpdate = update
+            }
         }
     }
 }

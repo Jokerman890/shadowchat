@@ -58,6 +58,45 @@ actor PreviewShadowClientService: ShadowClientService {
 
     func cancelOAuthSignIn() async {}
 
+    func securitySnapshot() async throws -> ShadowSecuritySnapshot {
+        .unknown
+    }
+
+    func securityUpdates() async -> AsyncStream<ShadowSecuritySnapshot> {
+        AsyncStream { continuation in
+            continuation.yield(.unknown)
+            continuation.finish()
+        }
+    }
+
+    func deviceVerificationUpdates() async -> AsyncStream<ShadowDeviceVerificationUpdate> {
+        AsyncStream { continuation in
+            continuation.finish()
+        }
+    }
+
+    func beginDeviceVerification() async throws {
+        throw ShadowServiceError.unsupportedOperation
+    }
+
+    func approveDeviceVerification() async throws {
+        throw ShadowServiceError.unsupportedOperation
+    }
+
+    func declineDeviceVerification() async throws {
+        throw ShadowServiceError.unsupportedOperation
+    }
+
+    func cancelDeviceVerification() async {}
+
+    func generateRecoveryKey(passphrase: String?) async throws -> String {
+        throw ShadowServiceError.unsupportedOperation
+    }
+
+    func recoverEncryption(recoveryKey: String) async throws -> ShadowSecuritySnapshot {
+        throw ShadowServiceError.unsupportedOperation
+    }
+
     func restoreSession() async throws -> ShadowSessionSnapshot? {
         nil
     }
