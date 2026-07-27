@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>ShadowChat</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>de.shadowchat.ios.oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>de.shadowchat.ios</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.social-networking</string>
+	<key>ShadowPushGatewayURL</key>
+	<string>$(SHADOW_PUSH_GATEWAY_URL)</string>
+	<key>ShadowSignalManagementRoomID</key>
+	<string>$(SHADOW_SIGNAL_MANAGEMENT_ROOM_ID)</string>
+	<key>ShadowSignalBotUserID</key>
+	<string>$(SHADOW_SIGNAL_BOT_USER_ID)</string>
+	<key>ShadowWhatsAppManagementRoomID</key>
+	<string>$(SHADOW_WHATSAPP_MANAGEMENT_ROOM_ID)</string>
+	<key>ShadowWhatsAppBotUserID</key>
+	<string>$(SHADOW_WHATSAPP_BOT_USER_ID)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ShadowChat verwendet die Kamera zum Scannen von QR-Codes und zum Aufnehmen von Medien.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>ShadowChat verwendet Face ID zum Schutz deiner lokalen Sitzung.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>ShadowChat verwendet das Mikrofon für Sprachnachrichten und Anrufe.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ShadowChat benötigt Zugriff auf deine Mediathek, damit du Medien senden kannst.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UIRequiresFullScreen</key>
+	<false/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+</dict>
+</plist>

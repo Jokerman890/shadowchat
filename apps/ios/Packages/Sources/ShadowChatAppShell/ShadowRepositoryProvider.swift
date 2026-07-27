@@ -1,7 +1,7 @@
 import ShadowChatListFeature
 import ShadowRoomTimelineFeature
 
-protocol ShadowRepositoryProvider {
+public protocol ShadowRepositoryProvider: Sendable {
     func makeChatListRepository() -> ChatListRepository
     func makeRoomTimelineRepository(roomId: String) -> RoomTimelineRepository
 }

@@ -12,6 +12,14 @@ Kernprinzipien:
 - klare Trennung zwischen UI, Domain, Security, Notifications, Billing und externen Quellen
 - motion-first Designsystem mit kontrollierter Performance
 
+## Codex-Projektstart
+1. Lies zuerst `docs/PROJECT-TODO.md` und wähle genau ein klar begrenztes Arbeitspaket.
+2. Prüfe danach Branch, Upstream und Arbeitsbaum mit `git status --short --branch`.
+3. Lies vor Codeänderungen die für das Arbeitspaket relevanten Dokumente unter `docs/`.
+4. Beachte in `apps/ios/` und `apps/android/` die jeweils spezifischere `AGENTS.md`.
+5. Führe die im Arbeitspaket und im Abschnitt `Tests und Verifikation` genannten Checks aus.
+6. Markiere TODO-Punkte erst nach erfolgreicher Implementierung und Verifikation als abgeschlossen.
+
 ## Codex-Arbeitsregeln
 1. Lies vor jeder Änderung die relevante Dokumentation unter `docs/`.
 2. Bevorzuge kleine, klar begrenzte Änderungen.

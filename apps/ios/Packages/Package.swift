@@ -1,13 +1,17 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 
 import PackageDescription
 
 let package = Package(
     name: "ShadowChatMobile",
     platforms: [
-        .iOS(.v17)
+        .iOS(.v18)
     ],
     products: [
+        .library(
+            name: "ShadowCoreContracts",
+            targets: ["ShadowCoreContracts"]
+        ),
         .library(
             name: "ShadowDesignSystem",
             targets: ["ShadowDesignSystem"]
@@ -27,6 +31,9 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "ShadowCoreContracts"
+        ),
+        .target(
             name: "ShadowDesignSystem"
         ),
         .target(
@@ -40,6 +47,7 @@ let package = Package(
         .target(
             name: "ShadowChatAppShell",
             dependencies: [
+                "ShadowCoreContracts",
                 "ShadowDesignSystem",
                 "ShadowChatListFeature",
                 "ShadowRoomTimelineFeature"
@@ -52,6 +60,13 @@ let package = Package(
         .testTarget(
             name: "ShadowRoomTimelineFeatureTests",
             dependencies: ["ShadowRoomTimelineFeature"]
+        ),
+        .testTarget(
+            name: "ShadowChatAppShellTests",
+            dependencies: [
+                "ShadowChatAppShell",
+                "ShadowCoreContracts"
+            ]
         )
     ]
 )

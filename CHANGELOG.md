@@ -18,6 +18,10 @@ Das Format orientiert sich an "Keep a Changelog"; die Produktversion folgt `MAJO
 - Rust Matrix Runtime Skeleton mit app-eigenen Session-Commands, States, Events, DTOs, Errors und No-op-Tests.
 - FFI-/DTO-Surface fuer Session Snapshot, Commands, States, Events, Errors und Capabilities im Rust Runtime Crate.
 - Mobile Repository Swap Boundary fuer Android und iOS, damit Demo-Repositories spaeter gegen FFI-backed Repositories getauscht werden koennen.
+- Native iOS-Produktshell mit Matrix-Login, Session Restore, Live-Sync, Raumliste, Timeline und Textversand.
+- iOS Security Center, Recovery-Flows, Push-Verarbeitung, Notification Service Extension und Bridge Hub.
+- Dokumentierte Branch- und Integrationsstrategie fuer den iOS-Produktbranch und die offenen Slice-Branches.
+- ADR-0016 fuer eine hybride Matrix-Laufzeit mit nativen Plattformadaptern und gemeinsamem Policy-/Contract-Core.
 
 ### Changed
 
@@ -26,11 +30,17 @@ Das Format orientiert sich an "Keep a Changelog"; die Produktversion folgt `MAJO
 - Motion- und Interaktionsverhalten fuer Mobile Shell, Chat-Liste und Timeline wurde mit kurzen, Reduce-Motion-bewussten Uebergaengen verfeinert.
 - Lokale Shell-Navigation zwischen Chat-Liste und Timeline wurde fuer Android und iOS plattformnaeher gepolisht.
 - Runtime-Demo-Daten und lokale InMemory-Repositories der Mobile App-Shell wurden fuer Android und iOS gekapselt.
+- iOS 27 ist als visuelles und interaktives Designziel dokumentiert; der technische Deployment-Mindeststand bleibt davon getrennt.
+- Reichhaltige, fluessige und kontextabhaengige Uebergaenge sind mit Reduce-Motion- und Reduce-Transparency-Alternativen als Produktanforderung festgelegt.
+- Die iOS-Marketingversionen von App und Notification Service Extension sind mit `VERSION` auf `0.1.0` abgeglichen.
+- Session, Sync, Room List, Timeline, Crypto und Matrix-Persistenz sind eindeutig den Plattformadaptern zugeordnet; der Rust-Core bleibt auf plattformneutrale Regeln und Testvektoren begrenzt.
 
 ### Known Gaps
 
 - iOS-Simulator-Screenshots muessen weiterhin auf macOS ergaenzt werden.
-- Matrix-, Auth-, Send-, Push- und Bridge-Integration sind noch nicht Teil der mobilen UI-Slices.
+- Die Android-App besitzt noch keine produktionsnahe Live-Matrix-Anbindung.
+- Release-Provisioning, gemeinsame Keychain/App Group fuer die Notification Service Extension und kontrollierte Testumgebungen fehlen noch.
+- Reproduzierbare Performance-Baselines fuer Start, Raumliste, Timeline, Speicher und UI-Jank fehlen noch.
 
 ## [0.1.0] - unreleased
 

@@ -1,0 +1,327 @@
+import Foundation
+import MatrixRustSDK
+import OSLog
+import ShadowCoreContracts
+import ShadowRoomTimelineFeature
+
+actor MatrixRustClientService: ShadowClientService {
+    nonisolated let runtimeEnvironment = ShadowRuntimeEnvironment.matrix
+
+    let keychain: MatrixSessionKeychain
+    var client: Client?
+    private var syncService: SyncService?
+    var activeToken: MatrixRestorationToken?
+    var sessionSnapshot: ShadowSessionSnapshot
+    var timelines: [String: MatrixTimelineContext] = [:]
+    var timelineContinuations: [
+        String: [UUID: AsyncStream<RoomTimelineSnapshotViewState>.Continuation]
+    ] = [:]
+    var pendingAuthentication: MatrixPendingAuthentication?
+    var securitySnapshotValue = ShadowSecuritySnapshot.unknown
+    var verificationController: SessionVerificationController?
+    var verificationDelegate: MatrixSessionVerificationDelegate?
+    var registeredPushIdentifiers: PusherIdentifiers?
+    var bridgeStates: [ShadowBridgeKind: ShadowBridgeConnectionState] = [:]
+    var pendingBridgePairings: [UUID: MatrixBridgePairingContext] = [:]
+    var verificationStateListener: TaskHandle?
+    var recoveryStateListener, backupStateListener: TaskHandle?
+    var securityContinuations: [UUID: AsyncStream<ShadowSecuritySnapshot>.Continuation] = [:]
+    var verificationContinuations: [UUID: AsyncStream<ShadowDeviceVerificationUpdate>.Continuation] = [:]
+
+    init(keychain: MatrixSessionKeychain = MatrixSessionKeychain()) {
+        self.keychain = keychain
+        sessionSnapshot = ShadowSessionSnapshot(
+            state: .signedOut,
+            environment: .matrix
+        )
+    }
+
+    func restoreSession() async throws -> ShadowSessionSnapshot? {
+        let interval = ShadowPerformanceSignposts.session.beginInterval("SessionRestore")
+        defer {
+            ShadowPerformanceSignposts.session.endInterval("SessionRestore", interval)
+        }
+
+        guard let token = try keychain.activeToken() else {
+            return nil
+        }
+
+        do {
+            try ensureDirectoriesExist(token.directories)
+
+            let restoredClient = try await ClientBuilder()
+                .setSessionDelegate(sessionDelegate: keychain)
+                .sqliteStore(
+                    config: .init(
+                        dataPath: token.directories.dataPath,
+                        cachePath: token.directories.cachePath
+                    )
+                    .passphrase(passphrase: token.storePassphrase)
+                )
+                .withSearchIndexStore(
+                    path: token.directories.dataPath,
+                    password: token.storePassphrase
+                )
+                .username(username: token.session.userId)
+                .homeserverUrl(url: token.session.homeserverUrl)
+                .build()
+
+            try await restoredClient.restoreSession(session: token.session)
+            client = restoredClient
+            activeToken = token
+            registeredPushIdentifiers = token.pusherIdentifiers?.sdkValue
+            sessionSnapshot = try makeSessionSnapshot(
+                client: restoredClient,
+                state: .active,
+                lastSyncAt: nil
+            )
+            return sessionSnapshot
+        } catch {
+            client = nil
+            activeToken = nil
+            throw mapError(error)
+        }
+    }
+
+    func signIn(_ request: ShadowLoginRequest) async throws -> ShadowSessionSnapshot {
+        guard request.homeserver.scheme?.lowercased() == "https",
+              request.homeserver.host != nil else {
+            throw ShadowServiceError.invalidHomeserver
+        }
+
+        let username = request.username.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !username.isEmpty, !request.password.isEmpty else {
+            throw ShadowServiceError.invalidCredentials
+        }
+
+        await cancelOAuthSignIn()
+        let directories = try MatrixSessionDirectories.create()
+        let passphrase = try SecurePassphraseGenerator.make()
+
+        do {
+            let authenticatedClient = try await makeAuthenticationClient(
+                homeserver: request.homeserver,
+                directories: directories,
+                passphrase: passphrase
+            )
+
+            try await authenticatedClient.login(
+                username: username,
+                password: request.password,
+                initialDeviceName: request.deviceDisplayName,
+                deviceId: nil
+            )
+
+            return try activateAuthenticatedClient(
+                client: authenticatedClient,
+                directories: directories,
+                passphrase: passphrase
+            )
+        } catch {
+            try? directories.remove()
+            throw mapError(error)
+        }
+    }
+
+    func makeAuthenticationClient(
+        homeserver: URL,
+        directories: MatrixSessionDirectories,
+        passphrase: String
+    ) async throws -> Client {
+        try await ClientBuilder()
+            .setSessionDelegate(sessionDelegate: keychain)
+            .slidingSyncVersionBuilder(versionBuilder: .discoverNative)
+            .autoEnableCrossSigning(autoEnableCrossSigning: true)
+            .autoEnableBackups(autoEnableBackups: true)
+            .backupDownloadStrategy(backupDownloadStrategy: .afterDecryptionFailure)
+            .enableShareHistoryOnInvite(enableShareHistoryOnInvite: true)
+            .sqliteStore(
+                config: .init(
+                    dataPath: directories.dataPath,
+                    cachePath: directories.cachePath
+                )
+                .passphrase(passphrase: passphrase)
+            )
+            .serverNameOrHomeserverUrl(serverNameOrUrl: homeserver.absoluteString)
+            .build()
+    }
+
+    func currentSession() async -> ShadowSessionSnapshot {
+        sessionSnapshot
+    }
+
+    func startSync() async throws -> ShadowSessionSnapshot {
+        let interval = ShadowPerformanceSignposts.session.beginInterval("SyncStart")
+        defer {
+            ShadowPerformanceSignposts.session.endInterval("SyncStart", interval)
+        }
+
+        guard let client, sessionSnapshot.state.grantsMessagingAccess else {
+            throw ShadowServiceError.sessionExpired
+        }
+
+        do {
+            let service: SyncService
+            if let syncService {
+                service = syncService
+            } else {
+                service = try await client
+                    .syncService()
+                    .withOfflineMode()
+                    .withSharePos(enable: true)
+                    .finish()
+                syncService = service
+            }
+
+            await service.start()
+            let syncedAt = Date()
+            sessionSnapshot = try makeSessionSnapshot(
+                client: client,
+                state: .syncing,
+                lastSyncAt: syncedAt
+            )
+            return sessionSnapshot
+        } catch {
+            throw mapError(error)
+        }
+    }
+
+    func stopSync() async {
+        await syncService?.stop()
+        syncService = nil
+        resetTimelines()
+
+        if sessionSnapshot.state.grantsMessagingAccess {
+            sessionSnapshot = ShadowSessionSnapshot(
+                state: .active,
+                account: sessionSnapshot.account,
+                capabilities: sessionSnapshot.capabilities,
+                lastSyncAt: sessionSnapshot.lastSyncAt,
+                environment: .matrix
+            )
+        }
+    }
+
+    func signOut(eraseLocalData: Bool) async throws -> ShadowSessionSnapshot {
+        await stopSync()
+
+        if !eraseLocalData {
+            try await unregisterPush()
+            do {
+                try await client?.logout()
+            } catch {
+                throw mapError(error)
+            }
+            client = nil
+            registeredPushIdentifiers = nil
+            resetSecurityState()
+            activeToken = nil
+            sessionSnapshot = ShadowSessionSnapshot(
+                state: .signedOut,
+                environment: .matrix
+            )
+            return sessionSnapshot
+        }
+
+        try? await unregisterPush()
+        try? await client?.logout()
+
+        let tokenToRemove = activeToken
+        var localCleanupError: (any Error)?
+        if let userID = tokenToRemove?.session.userId {
+            do {
+                try keychain.removeToken(userID: userID)
+            } catch {
+                localCleanupError = error
+            }
+        }
+        do {
+            try tokenToRemove?.directories.remove()
+        } catch {
+            localCleanupError = localCleanupError ?? error
+        }
+
+        client = nil
+        registeredPushIdentifiers = nil
+        resetSecurityState()
+        activeToken = nil
+        sessionSnapshot = ShadowSessionSnapshot(
+            state: .signedOut,
+            environment: .matrix
+        )
+
+        if let localCleanupError {
+            throw mapError(localCleanupError)
+        }
+        return sessionSnapshot
+    }
+
+    func makeSessionSnapshot(
+        client: Client,
+        state: ShadowSessionState,
+        lastSyncAt: Date?
+    ) throws -> ShadowSessionSnapshot {
+        let userID = try client.userId()
+        let deviceID = try client.deviceId()
+        let session = try client.session()
+        guard let homeserver = URL(string: session.homeserverUrl) else {
+            throw ShadowServiceError.invalidHomeserver
+        }
+
+        let displayName = userID
+            .trimmingCharacters(in: CharacterSet(charactersIn: "@"))
+            .split(separator: ":")
+            .first
+            .map(String.init) ?? userID
+        let account = ShadowAccount(
+            id: userID,
+            userID: userID,
+            displayName: displayName,
+            homeserver: homeserver,
+            deviceID: deviceID
+        )
+        return ShadowSessionSnapshot(
+            state: state,
+            account: account,
+            capabilities: Set(ShadowSessionCapability.allCases),
+            lastSyncAt: lastSyncAt,
+            environment: .matrix
+        )
+    }
+
+    private func ensureDirectoriesExist(_ directories: MatrixSessionDirectories) throws {
+        try FileManager.default.createDirectory(
+            at: directories.dataDirectory,
+            withIntermediateDirectories: true
+        )
+        try FileManager.default.createDirectory(
+            at: directories.cacheDirectory,
+            withIntermediateDirectories: true
+        )
+    }
+
+    func mapError(_ error: any Error) -> ShadowServiceError {
+        if let error = error as? ShadowServiceError {
+            return error
+        }
+
+        let message = String(describing: error)
+        let normalized = message.lowercased()
+        if normalized.contains("forbidden")
+            || normalized.contains("unauthorized")
+            || normalized.contains("credentials") {
+            return .invalidCredentials
+        }
+        if normalized.contains("network")
+            || normalized.contains("connection")
+            || normalized.contains("timed out") {
+            return .networkUnavailable
+        }
+        if normalized.contains("discovery")
+            || normalized.contains("well-known")
+            || normalized.contains("homeserver") {
+            return .serverDiscoveryFailed
+        }
+        return .unknown(message)
+    }
+}

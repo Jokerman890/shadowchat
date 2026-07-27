@@ -1,45 +1,115 @@
 import ShadowChatListFeature
+import ShadowCoreContracts
 import ShadowDesignSystem
 import ShadowRoomTimelineFeature
 import SwiftUI
 
 public struct ShadowChatRootView: View {
-    private let repositoryProvider: ShadowRepositoryProvider
+    @State private var appState: ShadowAppState
 
-    @StateObject private var router: ShadowChatRouter
-    @StateObject private var chatListViewModel: ChatListViewModel
+    private let repositoryProvider: any ShadowRepositoryProvider
+    private let notificationRouter: ShadowNotificationRouter
 
     public init() {
-        self.init(repositoryProvider: DemoShadowRepositoryProvider())
-    }
-
-    private init(repositoryProvider: ShadowRepositoryProvider) {
-        self.repositoryProvider = repositoryProvider
-        let router = ShadowChatRouter()
-        _router = StateObject(wrappedValue: router)
-        _chatListViewModel = StateObject(
-            wrappedValue: ChatListViewModel(
-                repository: repositoryProvider.makeChatListRepository(),
-                onRoomSelected: { [weak router] roomId in
-                    router?.openRoom(roomId)
-                }
-            )
+        self.init(
+            appState: ShadowAppState(),
+            repositoryProvider: DemoShadowRepositoryProvider(),
+            notificationRouter: .shared
         )
     }
 
+    public init(appState: ShadowAppState) {
+        self.init(
+            appState: appState,
+            repositoryProvider: DemoShadowRepositoryProvider(),
+            notificationRouter: .shared
+        )
+    }
+
+    public init(
+        appState: ShadowAppState,
+        repositoryProvider: any ShadowRepositoryProvider,
+        notificationRouter: ShadowNotificationRouter = .shared
+    ) {
+        _appState = State(initialValue: appState)
+        self.repositoryProvider = repositoryProvider
+        self.notificationRouter = notificationRouter
+    }
+
     public var body: some View {
+        Group {
+            switch appState.session.state {
+            case .launching, .restoring:
+                ShadowLaunchView()
+            case .signedOut, .failed, .expired:
+                ShadowOnboardingView(appState: appState)
+            case .discovering, .authenticating:
+                ShadowLaunchView(message: "Sichere Anmeldung wird vorbereitet")
+            case .active, .syncing, .offline, .locked:
+                ShadowAuthenticatedShell(
+                    appState: appState,
+                    repositoryProvider: repositoryProvider,
+                    notificationRouter: notificationRouter
+                )
+            }
+        }
+        .task {
+            await appState.launch()
+        }
+        .alert(
+            "ShadowChat",
+            isPresented: Binding(
+                get: { appState.errorMessage != nil },
+                set: { if !$0 { appState.clearError() } }
+            )
+        ) {
+            Button("OK") {
+                appState.clearError()
+            }
+        } message: {
+            Text(appState.errorMessage ?? "")
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
+private struct ShadowAuthenticatedShell: View {
+    @Bindable var appState: ShadowAppState
+
+    private let repositoryProvider: any ShadowRepositoryProvider
+    @Bindable private var notificationRouter: ShadowNotificationRouter
+
+    @State private var selectedTab: ShadowShellTab = .chats
+    @State private var chatPath = NavigationPath()
+
+    init(
+        appState: ShadowAppState,
+        repositoryProvider: any ShadowRepositoryProvider,
+        notificationRouter: ShadowNotificationRouter
+    ) {
+        self.appState = appState
+        self.repositoryProvider = repositoryProvider
+        self.notificationRouter = notificationRouter
+    }
+
+    var body: some View {
         ShadowLiquidBackground {
-            TabView(selection: $router.selectedTab) {
-                NavigationStack(path: $router.chatPath) {
-                    ChatListRoute(viewModel: chatListViewModel)
-                        .navigationDestination(for: String.self) { roomId in
-                            RoomTimelineRoute(
-                                viewModel: RoomTimelineViewModel(
-                                    roomId: roomId,
-                                    repository: repositoryProvider.makeRoomTimelineRepository(roomId: roomId)
-                                )
+            TabView(selection: $selectedTab) {
+                NavigationStack(path: $chatPath) {
+                    ChatListRoute(
+                        viewModel: ChatListViewModel(
+                            repository: repositoryProvider.makeChatListRepository(),
+                            onRoomSelected: openRoom
+                        )
+                    )
+                    .navigationDestination(for: String.self) { roomID in
+                        RoomTimelineRoute(
+                            viewModel: RoomTimelineViewModel(
+                                roomId: roomID,
+                                repository: repositoryProvider.makeRoomTimelineRepository(roomId: roomID)
                             )
-                        }
+                        )
+                    }
                 }
                 .tabItem {
                     Label("Chats", systemImage: "bubble.left.and.bubble.right.fill")
@@ -48,221 +118,155 @@ public struct ShadowChatRootView: View {
 
                 CallsShellView()
                     .tabItem {
-                        Label("Calls", systemImage: "phone.fill")
+                        Label("Anrufe", systemImage: "phone.fill")
                     }
                     .tag(ShadowShellTab.calls)
 
-                UpdatesShellView()
+                ShadowBridgeHubView(appState: appState)
                     .tabItem {
-                        Label("Updates", systemImage: "sparkles")
+                        Label("Bridges", systemImage: "point.3.connected.trianglepath.dotted")
                     }
-                    .tag(ShadowShellTab.updates)
+                    .tag(ShadowShellTab.bridges)
 
-                ProfileShellView()
+                ShadowSettingsView(appState: appState)
                     .tabItem {
-                        Label("Profile", systemImage: "person.crop.circle.fill")
-                    }
-                    .tag(ShadowShellTab.profile)
-
-                SettingsShellView()
-                    .tabItem {
-                        Label("Settings", systemImage: "gearshape.fill")
+                        Label("Einstellungen", systemImage: "gearshape.fill")
                     }
                     .tag(ShadowShellTab.settings)
             }
-            .tint(ShadowColors.unreadBadge)
-            .onChange(of: router.selectedTab) { _, tab in
+            .tint(ShadowColors.whatsAppGreen)
+            .onChange(of: selectedTab) { _, tab in
                 if tab != .chats {
-                    router.closeRoom()
+                    chatPath = NavigationPath()
                 }
             }
+            .task {
+                openPendingNotificationRoom()
+            }
+            .onChange(of: notificationRouter.pendingRoomID) { _, _ in
+                openPendingNotificationRoom()
+            }
         }
+        .sheet(
+            isPresented: Binding(
+                get: { appState.activePairingSession != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        Task { await appState.cancelPairing() }
+                    }
+                }
+            )
+        ) {
+            if let pairing = appState.activePairingSession {
+                ShadowPairingView(
+                    pairing: pairing,
+                    confirm: {
+                        Task { await appState.confirmPairing() }
+                    },
+                    cancel: {
+                        Task { await appState.cancelPairing() }
+                    }
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            }
+        }
+    }
+
+    private func openRoom(_ roomID: String) {
+        selectedTab = .chats
+        chatPath = NavigationPath()
+        chatPath.append(roomID)
+    }
+
+    private func openPendingNotificationRoom() {
+        guard let roomID = notificationRouter.consumePendingRoomID() else {
+            return
+        }
+        openRoom(roomID)
     }
 }
 
 private enum ShadowShellTab: Hashable {
     case chats
     case calls
-    case updates
-    case profile
+    case bridges
     case settings
 }
 
-@MainActor
-private final class ShadowChatRouter: ObservableObject {
-    @Published var selectedTab: ShadowShellTab = .chats
-    @Published var chatPath = NavigationPath()
+private struct ShadowLaunchView: View {
+    var message = "ShadowChat wird gestartet"
 
-    func openRoom(_ roomId: String) {
-        selectedTab = .chats
-        chatPath = NavigationPath()
-        chatPath.append(roomId)
-    }
+    var body: some View {
+        ShadowLiquidBackground {
+            VStack(spacing: ShadowSpacing.xl) {
+                Image(systemName: "bubble.left.and.bubble.right.fill")
+                    .font(.system(size: 42, weight: .bold))
+                    .foregroundStyle(.black)
+                    .frame(width: 92, height: 92)
+                    .background(shadowAccentGradient, in: Circle())
 
-    func closeRoom() {
-        chatPath = NavigationPath()
+                Text("ShadowChat")
+                    .font(.largeTitle.weight(.bold))
+
+                ProgressView(message)
+                    .tint(ShadowColors.whatsAppGreen)
+                    .foregroundStyle(ShadowColors.softText)
+            }
+            .padding(ShadowSpacing.xl)
+        }
     }
 }
 
 private struct CallsShellView: View {
     var body: some View {
-        ShellScreen(title: "Calls", symbolName: "phone.fill") {
-            PillRow(labels: ShadowDemoData.callFilters)
-            ForEach(ShadowDemoData.callRows) { row in
-                ShellRow(title: row.title, subtitle: row.subtitle, trailing: row.trailing)
-            }
-        }
-    }
-}
-
-private struct UpdatesShellView: View {
-    var body: some View {
-        ShellScreen(title: "Updates", symbolName: "sparkles") {
-            ForEach(ShadowDemoData.updateRows) { row in
-                ShellRow(title: row.title, subtitle: row.subtitle, trailing: row.trailing)
-            }
-        }
-    }
-}
-
-private struct ProfileShellView: View {
-    var body: some View {
-        ShellScreen(title: "Profile", symbolName: "person.crop.circle.fill") {
-            AvatarHero(name: ShadowDemoData.profileHero.name, subtitle: ShadowDemoData.profileHero.subtitle)
-            PillRow(labels: ShadowDemoData.profileActions)
-            ForEach(ShadowDemoData.profileRows) { row in
-                ShellRow(title: row.title, subtitle: row.subtitle, trailing: row.trailing)
-            }
-        }
-    }
-}
-
-private struct SettingsShellView: View {
-    var body: some View {
-        ShellScreen(title: "Settings", symbolName: "gearshape.fill") {
-            AvatarHero(name: ShadowDemoData.settingsHero.name, subtitle: ShadowDemoData.settingsHero.subtitle)
-            ForEach(ShadowDemoData.settingsRows) { row in
-                ShellRow(title: row.title, subtitle: row.subtitle, trailing: row.trailing)
-            }
-        }
-    }
-}
-
-private struct ShellScreen<Content: View>: View {
-    let title: String
-    let symbolName: String
-    private let content: Content
-
-    init(
-        title: String,
-        symbolName: String,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.title = title
-        self.symbolName = symbolName
-        self.content = content()
-    }
-
-    var body: some View {
         NavigationStack {
             ShadowLiquidBackground {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: ShadowSpacing.md) {
-                        HStack(spacing: ShadowSpacing.md) {
-                            Image(systemName: symbolName)
-                                .font(.title2.weight(.bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 54, height: 54)
-                                .background(shadowAccentGradient, in: Circle())
+                    LazyVStack(alignment: .leading, spacing: ShadowSpacing.md) {
+                        Text("Anrufe")
+                            .font(.largeTitle.weight(.bold))
 
-                            Text(title)
-                                .font(.largeTitle.weight(.bold))
-                                .foregroundStyle(ShadowColors.deepText)
+                        Text("Matrix-Calls bleiben getrennt von externen Bridge-Anrufen.")
+                            .foregroundStyle(ShadowColors.softText)
+
+                        ForEach(ShadowDemoData.callRows) { row in
+                            ShadowGlassPanel(radius: ShadowRadii.card) {
+                                HStack(spacing: ShadowSpacing.md) {
+                                    AvatarBadge(title: row.title)
+                                    VStack(alignment: .leading, spacing: ShadowSpacing.xs) {
+                                        Text(row.title)
+                                            .font(.headline)
+                                        Text(row.subtitle)
+                                            .font(.subheadline)
+                                            .foregroundStyle(ShadowColors.softText)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "phone.fill")
+                                        .foregroundStyle(ShadowColors.whatsAppGreen)
+                                        .accessibilityLabel("Anrufen")
+                                }
+                                .padding(ShadowSpacing.md)
+                            }
                         }
-
-                        content
                     }
                     .padding(ShadowSpacing.lg)
                 }
             }
-            .navigationTitle(title)
+            .navigationTitle("Anrufe")
             .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
 
-private struct PillRow: View {
-    let labels: [String]
-
-    var body: some View {
-        HStack(spacing: ShadowSpacing.sm) {
-            ForEach(labels, id: \.self) { label in
-                Text(label)
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, ShadowSpacing.md)
-                    .padding(.vertical, ShadowSpacing.sm)
-                    .background(.ultraThinMaterial, in: Capsule())
-                    .overlay(Capsule().stroke(.white.opacity(0.55), lineWidth: 1))
-            }
-        }
-    }
-}
-
-private struct AvatarHero: View {
-    let name: String
-    let subtitle: String
-
-    var body: some View {
-        ShadowGlassPanel {
-            HStack(spacing: ShadowSpacing.md) {
-                DemoAvatar(initial: String(name.first ?? "S"))
-                VStack(alignment: .leading) {
-                    Text(name)
-                        .font(.title2.weight(.bold))
-                    Text(subtitle)
-                        .foregroundStyle(ShadowColors.softText)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(ShadowSpacing.lg)
-        }
-    }
-}
-
-private struct ShellRow: View {
+private struct AvatarBadge: View {
     let title: String
-    let subtitle: String
-    let trailing: String
 
     var body: some View {
-        ShadowGlassPanel(radius: ShadowRadii.card) {
-            HStack(spacing: ShadowSpacing.md) {
-                DemoAvatar(initial: String(title.first ?? "S"))
-                VStack(alignment: .leading, spacing: ShadowSpacing.xs) {
-                    Text(title)
-                        .font(.headline.weight(.semibold))
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(ShadowColors.softText)
-                }
-                Spacer()
-                Text(trailing)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(ShadowColors.unreadBadge)
-            }
-            .padding(ShadowSpacing.md)
-        }
-    }
-}
-
-private struct DemoAvatar: View {
-    let initial: String
-
-    var body: some View {
-        Text(initial.uppercased())
+        Text(String(title.first ?? "S").uppercased())
             .font(.headline.weight(.bold))
-            .foregroundStyle(.white)
-            .frame(width: 52, height: 52)
+            .foregroundStyle(.black)
+            .frame(width: 50, height: 50)
             .background(shadowAccentGradient, in: Circle())
     }
 }

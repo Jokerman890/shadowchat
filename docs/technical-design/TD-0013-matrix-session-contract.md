@@ -4,6 +4,12 @@
 
 Akzeptiert als vorbereitender Contract-Slice. Dieser Slice dokumentiert Session-, Client- und Lifecycle-Grenzen, ohne echte Matrix-SDK-Integration zu bauen.
 
+ADR-0016 präzisiert die Zielgrenze: Die operative Session- und Sync-Laufzeit
+liegt im jeweiligen Plattform-Matrix-Adapter. Die in diesem Dokument
+beschriebenen Zustände und Fehler bleiben als app-eigene Contract-Sprache
+gültig; eine gemeinsame ShadowChat-Rust-Runtime oder produktive FFI wird daraus
+nicht abgeleitet.
+
 ## Ziel
 
 Der `Matrix Session Contract` beschreibt, welche app-eigenen Zustände, Commands, Errors und DTO-Grenzen ShadowChat braucht, bevor echte Matrix Room List / Timeline Services angebunden werden.
@@ -27,7 +33,8 @@ Dieser Slice führt nicht ein:
 
 ## 🧩 Architekturgrenze
 
-Die Session-Grenze liegt zwischen App-Shell/Feature-Repositories und dem späteren Rust-/Matrix-Runtime-Layer.
+Die Session-Grenze liegt zwischen App-Shell/Feature-Repositories und dem
+Plattform-Matrix-Adapter.
 
 Mobile Plattformen dürfen nicht direkt mit `matrix-rust-sdk`-Typen arbeiten. Sie sprechen über app-eigene Contracts:
 
@@ -38,7 +45,9 @@ Mobile Plattformen dürfen nicht direkt mit `matrix-rust-sdk`-Typen arbeiten. Si
 - `SessionSnapshotDto`
 - `SessionCapabilityDto`
 
-Rust-Core oder ein späterer Service-Adapter darf Matrix-nahe Typen intern nutzen, muss sie aber an der Boundary in ShadowChat-Modelle mappen.
+Nur der Plattform-Matrix-Adapter darf Matrix-nahe Typen intern nutzen und muss
+sie an der Boundary in ShadowChat-Modelle mappen. Der Rust-Core verarbeitet
+ausschließlich plattformneutrale Werte und Policies.
 
 ## 🔐 Session State Model
 
@@ -129,9 +138,10 @@ Fehler müssen bewusst grober bleiben als SDK-Details, aber präziser als ein ge
 
 🔐 Security-relevante Fehler wie `deviceUntrusted` oder `cryptoStateUnavailable` dürfen nicht als normale Offline-Fehler dargestellt werden.
 
-## FFI-/DTO-Planung
+## Wertmodell- und optionale FFI-Planung
 
-Die spätere FFI-Grenze soll wertbasierte DTOs verwenden:
+Die Contract-Grenze verwendet wertbasierte DTOs. Falls ausgewählte pure
+Core-Policies später per FFI angebunden werden, verwenden sie dieselben Werte:
 
 ```text
 SessionSnapshotDto
@@ -167,16 +177,18 @@ Android und iOS sollen Session-State später oberhalb der Feature-Repositories h
 - Feature-Views erhalten weiterhin nur ihre bisherigen UI-State-Modelle.
 - Demo-Repositories bleiben als fallback/testbare Shell-Implementierung erhalten, bis echte Services angeschlossen sind.
 
-## Mapping zu Rust
+## Mapping zum gemeinsamen Rust-Core
 
-Rust-Core sollte langfristig trennen:
+Der Rust-Core kann langfristig folgende pure Contract-/Policy-Bereiche trennen:
 
 - `shadow_core_auth`: Auth-/Discovery-Contracts
 - `shadow_core_session`: Session-State, Commands, Events, Error Model
 - `shadow_core_rooms`: Room List Service Contract
 - `shadow_core_timeline`: Timeline Service Contract
 
-Der bestehende `SessionStore` ist nur ein Stub. Er ist nicht der finale Session Runtime Store und darf nicht als Singleton-Architektur missverstanden werden.
+Der bestehende `SessionStore` ist nur ein Stub. Er ist weder finaler
+Session-Runtime-Store noch Besitzer von Matrix-Credentials, Crypto oder
+SDK-Persistenz.
 
 ## 📌 Entscheidungen
 
