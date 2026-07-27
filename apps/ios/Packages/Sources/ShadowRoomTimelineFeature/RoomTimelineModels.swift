@@ -3,17 +3,26 @@ import Foundation
 public struct RoomTimelineSnapshotViewState: Equatable, Sendable {
     public let roomId: String
     public let roomTitle: String?
+    public let securityState: RoomTimelineSecurityState
     public let items: [RoomTimelineItemViewState]
 
     public init(
         roomId: String,
         roomTitle: String?,
+        securityState: RoomTimelineSecurityState = .unknown,
         items: [RoomTimelineItemViewState]
     ) {
         self.roomId = roomId
         self.roomTitle = roomTitle
+        self.securityState = securityState
         self.items = items
     }
+}
+
+public enum RoomTimelineSecurityState: Equatable, Sendable {
+    case encrypted
+    case unencrypted
+    case unknown
 }
 
 public struct RoomTimelineItemViewState: Equatable, Identifiable, Sendable {
@@ -64,7 +73,6 @@ public enum RoomTimelineState: Equatable, Sendable {
 }
 
 public enum RoomTimelineEvent: Equatable, Sendable {
-    case appeared
     case refreshRequested
     case retryRequested
     case draftChanged(String)

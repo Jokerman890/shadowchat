@@ -45,7 +45,9 @@ gesetzt werden:
 - `SHADOW_PUSH_GATEWAY_URL`: vollständige HTTPS-URL des Matrix/Sygnal
   `/_matrix/push/v1/notify`-Endpoints
 - `SHADOW_WHATSAPP_MANAGEMENT_ROOM_ID`: Room-ID des mautrix-whatsapp-Bots
+- `SHADOW_WHATSAPP_BOT_USER_ID`: erwartete Matrix-User-ID des mautrix-whatsapp-Bots
 - `SHADOW_SIGNAL_MANAGEMENT_ROOM_ID`: Room-ID des mautrix-signal-Bots
+- `SHADOW_SIGNAL_BOT_USER_ID`: erwartete Matrix-User-ID des mautrix-signal-Bots
 
 Für Gerätebuilds müssen außerdem `DEVELOPMENT_TEAM`, die App Group
 `group.de.shadowchat.ios` und die Push-Capability im Apple Developer Account

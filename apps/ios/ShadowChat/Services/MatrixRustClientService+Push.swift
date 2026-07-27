@@ -18,9 +18,14 @@ extension MatrixRustClientService {
             pushkey: deviceToken.base64EncodedString(),
             appId: "de.shadowchat.ios"
         )
+        let persistedIdentifiers = MatrixPersistedPusherIdentifiers(
+            pushKey: deviceToken.base64EncodedString(),
+            appID: "de.shadowchat.ios"
+        )
         let payload = ShadowAPNSPayload(
             clientIdentifier: UUID().uuidString
         )
+        var pusherWasRegistered = false
 
         do {
             let payloadData = try JSONEncoder().encode(payload)
@@ -46,22 +51,50 @@ extension MatrixRustClientService {
                 lang: Locale.current.language.languageCode?.identifier ?? "de",
                 append: false
             )
+            pusherWasRegistered = true
+
+            guard let activeToken else {
+                throw MatrixSessionPersistenceError.missingSession
+            }
+            let updatedToken = activeToken.updating(
+                pusherIdentifiers: persistedIdentifiers
+            )
+            try keychain.save(updatedToken)
+            self.activeToken = updatedToken
             registeredPushIdentifiers = identifiers
             return ShadowPushRegistration(
                 state: .registered,
                 registeredAt: Date()
             )
         } catch {
+            if pusherWasRegistered {
+                try? await client.deletePusher(identifiers: identifiers)
+            }
+            registeredPushIdentifiers = nil
             throw mapError(error)
         }
     }
 
-    func unregisterPush() async {
-        guard let client, let registeredPushIdentifiers else { return }
-        try? await client.deletePusher(
-            identifiers: registeredPushIdentifiers
-        )
-        self.registeredPushIdentifiers = nil
+    func unregisterPush() async throws {
+        guard let identifiers = registeredPushIdentifiers
+            ?? activeToken?.pusherIdentifiers?.sdkValue else {
+            return
+        }
+        guard let client else {
+            throw ShadowServiceError.sessionExpired
+        }
+
+        do {
+            try await client.deletePusher(identifiers: identifiers)
+            registeredPushIdentifiers = nil
+            if let activeToken {
+                let updatedToken = activeToken.updating(pusherIdentifiers: nil)
+                self.activeToken = updatedToken
+                try keychain.save(updatedToken)
+            }
+        } catch {
+            throw mapError(error)
+        }
     }
 }
 

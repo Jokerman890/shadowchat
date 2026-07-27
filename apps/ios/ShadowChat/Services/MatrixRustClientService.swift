@@ -1,6 +1,7 @@
 import Foundation
 import MatrixRustSDK
 import ShadowCoreContracts
+import ShadowRoomTimelineFeature
 
 actor MatrixRustClientService: ShadowClientService {
     nonisolated let runtimeEnvironment = ShadowRuntimeEnvironment.matrix
@@ -11,6 +12,9 @@ actor MatrixRustClientService: ShadowClientService {
     var activeToken: MatrixRestorationToken?
     var sessionSnapshot: ShadowSessionSnapshot
     var timelines: [String: MatrixTimelineContext] = [:]
+    var timelineContinuations: [
+        String: [UUID: AsyncStream<RoomTimelineSnapshotViewState>.Continuation]
+    ] = [:]
     var pendingAuthentication: MatrixPendingAuthentication?
     var securitySnapshotValue = ShadowSecuritySnapshot.unknown
     var verificationController: SessionVerificationController?
@@ -59,6 +63,7 @@ actor MatrixRustClientService: ShadowClientService {
             try await restoredClient.restoreSession(session: token.session)
             client = restoredClient
             activeToken = token
+            registeredPushIdentifiers = token.pusherIdentifiers?.sdkValue
             sessionSnapshot = try makeSessionSnapshot(
                 client: restoredClient,
                 state: .active,
@@ -188,7 +193,7 @@ actor MatrixRustClientService: ShadowClientService {
 
     func signOut(eraseLocalData: Bool) async throws -> ShadowSessionSnapshot {
         await stopSync()
-        await unregisterPush()
+        try await unregisterPush()
 
         do {
             try await client?.logout()
@@ -201,7 +206,9 @@ actor MatrixRustClientService: ShadowClientService {
         client = nil
         resetSecurityState()
         if eraseLocalData {
-            try keychain.removeActiveToken()
+            if let userID = activeToken?.session.userId {
+                try keychain.removeToken(userID: userID)
+            }
             try activeToken?.directories.remove()
         }
         activeToken = nil

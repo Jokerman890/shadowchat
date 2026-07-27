@@ -33,10 +33,12 @@ enum ShadowDemoData {
     ]
 
     static func timelineSnapshot(roomId: String) -> RoomTimelineSnapshotViewState {
-        let roomTitle = chatRooms.first { $0.roomId == roomId }?.title ?? "Conversation"
+        let room = chatRooms.first { $0.roomId == roomId }
+        let roomTitle = room?.title ?? "Conversation"
         return RoomTimelineSnapshotViewState(
             roomId: roomId,
             roomTitle: roomTitle,
+            securityState: room?.trustLevel == .reduced ? .unencrypted : .encrypted,
             items: timelineItems(roomId: roomId, roomTitle: roomTitle)
         )
     }
@@ -140,14 +142,5 @@ struct DemoRoomTimelineRepository: RoomTimelineRepository {
         ShadowDemoData.timelineSnapshot(roomId: roomId)
     }
 
-    func sendMessage(roomId: String, body: String) async throws -> RoomTimelineItemViewState {
-        RoomTimelineItemViewState(
-            messageId: UUID().uuidString,
-            senderDisplayName: nil,
-            body: body,
-            sentAtLabel: Date.now.formatted(date: .omitted, time: .shortened),
-            direction: .outgoing,
-            deliveryState: .sent
-        )
-    }
+    func sendMessage(roomId: String, body: String) async throws {}
 }

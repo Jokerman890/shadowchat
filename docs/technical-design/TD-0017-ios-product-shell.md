@@ -39,7 +39,13 @@ Das Modul importiert weder SwiftUI noch MatrixRustSDK.
 
 ### Room Timeline
 
-`RoomTimelineRepository` besitzt zusätzlich zu `loadTimeline` eine asynchrone `sendMessage`-Grenze. `RoomTimelineViewModel` verwaltet Entwurf, laufenden Sendestatus und Fehler. Ein erfolgreicher Send fügt das Repository-Ergebnis der aktuellen Timeline hinzu; ein Fehler erhält den Entwurf.
+`RoomTimelineRepository` besitzt zusätzlich zu `loadTimeline` einen
+lifecycle-gebundenen `AsyncStream` für Timeline-Snapshots und eine asynchrone
+`sendMessage`-Grenze. `RoomTimelineViewModel` verwaltet Entwurf, laufenden
+Sendestatus und Fehler. Ein erfolgreicher Send leert den Entwurf; lokales Echo
+und Serverbestätigung kommen ausschließlich aus dem Matrix-Timeline-Stream,
+damit kein synthetisches Duplikat entsteht. Die Timeline zeigt den tatsächlichen
+Raum-Verschlüsselungsstatus und bietet den Composer auch in einem leeren Raum an.
 
 ## Navigation
 

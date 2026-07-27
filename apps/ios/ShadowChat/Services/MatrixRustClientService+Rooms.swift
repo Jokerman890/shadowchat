@@ -6,7 +6,10 @@ import ShadowRoomTimelineFeature
 
 struct MatrixTimelineContext {
     let timeline: Timeline
+    let roomTitle: String?
+    let securityState: RoomTimelineSecurityState
     var observationToken: TaskHandle?
+    var initialUpdateContinuation: AsyncStream<Void>.Continuation?
     var items: [TimelineItem]
     var receivedInitialUpdate: Bool
 }
@@ -34,18 +37,35 @@ extension MatrixRustClientService {
 
     func loadTimeline(roomID: String) async throws -> RoomTimelineSnapshotViewState {
         let context = try await timelineContext(roomID: roomID)
-        let roomTitle = try await roomInfo(roomID: roomID).displayName
-        return RoomTimelineSnapshotViewState(
-            roomId: roomID,
-            roomTitle: roomTitle,
-            items: context.items.compactMap(makeTimelineItem)
+        return makeTimelineSnapshot(roomID: roomID, context: context)
+    }
+
+    func timelineUpdates(
+        roomID: String
+    ) async throws -> AsyncStream<RoomTimelineSnapshotViewState> {
+        let context = try await timelineContext(roomID: roomID)
+        let subscriberID = UUID()
+        let (stream, continuation) = AsyncStream.makeStream(
+            of: RoomTimelineSnapshotViewState.self,
+            bufferingPolicy: .bufferingNewest(1)
         )
+        continuation.onTermination = { [weak self] _ in
+            Task {
+                await self?.removeTimelineContinuation(
+                    roomID: roomID,
+                    subscriberID: subscriberID
+                )
+            }
+        }
+        timelineContinuations[roomID, default: [:]][subscriberID] = continuation
+        continuation.yield(makeTimelineSnapshot(roomID: roomID, context: context))
+        return stream
     }
 
     func sendMessage(
         roomID: String,
         body: String
-    ) async throws -> RoomTimelineItemViewState {
+    ) async throws {
         let normalizedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedBody.isEmpty else {
             throw RoomTimelineRepositoryError.sendingUnavailable
@@ -55,14 +75,20 @@ extension MatrixRustClientService {
             let context = try await timelineContext(roomID: roomID)
             let content = messageEventContentFromMarkdown(md: normalizedBody)
             _ = try await context.timeline.send(msg: content)
-            return makeSentTimelineItem(body: normalizedBody)
         } catch {
             throw mapError(error)
         }
     }
 
     func resetTimelines() {
-        timelines.values.forEach { $0.observationToken?.cancel() }
+        timelines.values.forEach {
+            $0.observationToken?.cancel()
+            $0.initialUpdateContinuation?.finish()
+        }
+        timelineContinuations.values
+            .flatMap(\.values)
+            .forEach { $0.finish() }
+        timelineContinuations.removeAll()
         timelines.removeAll()
     }
 
@@ -76,6 +102,7 @@ extension MatrixRustClientService {
             throw ShadowServiceError.unknown("Der Matrix-Raum wurde nicht gefunden.")
         }
 
+        let info = try await room.roomInfo()
         let timeline = try await room.timelineWithConfiguration(
             configuration: .init(
                 focus: .live(hideThreadedEvents: false),
@@ -86,9 +113,20 @@ extension MatrixRustClientService {
                 reportUtds: true
             )
         )
+        let (initialUpdateStream, initialUpdateContinuation) = AsyncStream.makeStream(
+            of: Void.self,
+            bufferingPolicy: .bufferingNewest(1)
+        )
         timelines[roomID] = MatrixTimelineContext(
             timeline: timeline,
+            roomTitle: info.displayName?.nonEmpty
+                ?? info.canonicalAlias?.nonEmpty
+                ?? info.id,
+            securityState: info.encryptionState == .encrypted
+                ? .encrypted
+                : .unencrypted,
             observationToken: nil,
+            initialUpdateContinuation: initialUpdateContinuation,
             items: [],
             receivedInitialUpdate: false
         )
@@ -100,8 +138,13 @@ extension MatrixRustClientService {
         }
         timelines[roomID]?.observationToken = await timeline.addListener(listener: listener)
 
-        for _ in 0..<100 where timelines[roomID]?.receivedInitialUpdate == false {
-            try await Task.sleep(for: .milliseconds(10))
+        do {
+            try await waitForInitialTimelineUpdate(initialUpdateStream)
+        } catch {
+            timelines[roomID]?.observationToken?.cancel()
+            timelines[roomID]?.initialUpdateContinuation?.finish()
+            timelines[roomID] = nil
+            throw error
         }
 
         guard let context = timelines[roomID] else {
@@ -117,8 +160,64 @@ extension MatrixRustClientService {
         for diff in diffs {
             apply(diff, to: &context.items)
         }
-        context.receivedInitialUpdate = true
+        if !context.receivedInitialUpdate {
+            context.receivedInitialUpdate = true
+            context.initialUpdateContinuation?.yield(())
+            context.initialUpdateContinuation?.finish()
+            context.initialUpdateContinuation = nil
+        }
         timelines[roomID] = context
+        let snapshot = makeTimelineSnapshot(roomID: roomID, context: context)
+        timelineContinuations[roomID]?.values.forEach {
+            $0.yield(snapshot)
+        }
+    }
+
+    private func waitForInitialTimelineUpdate(
+        _ stream: AsyncStream<Void>
+    ) async throws {
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask {
+                var iterator = stream.makeAsyncIterator()
+                guard await iterator.next() != nil else {
+                    throw CancellationError()
+                }
+            }
+            group.addTask {
+                try await Task.sleep(for: .seconds(10))
+                throw ShadowServiceError.unknown(
+                    "Die Matrix-Timeline hat kein initiales Update geliefert."
+                )
+            }
+            _ = try await group.next()
+            group.cancelAll()
+        }
+    }
+
+    private func removeTimelineContinuation(
+        roomID: String,
+        subscriberID: UUID
+    ) {
+        timelineContinuations[roomID]?[subscriberID] = nil
+        guard timelineContinuations[roomID]?.isEmpty == true else {
+            return
+        }
+        timelineContinuations[roomID] = nil
+        timelines[roomID]?.observationToken?.cancel()
+        timelines[roomID]?.initialUpdateContinuation?.finish()
+        timelines[roomID] = nil
+    }
+
+    private func makeTimelineSnapshot(
+        roomID: String,
+        context: MatrixTimelineContext
+    ) -> RoomTimelineSnapshotViewState {
+        RoomTimelineSnapshotViewState(
+            roomId: roomID,
+            roomTitle: context.roomTitle,
+            securityState: context.securityState,
+            items: context.items.compactMap(makeTimelineItem)
+        )
     }
 
     private func apply(_ diff: TimelineDiff, to items: inout [TimelineItem]) {
@@ -255,17 +354,6 @@ extension MatrixRustClientService {
         case nil:
             .delivered
         }
-    }
-
-    private func makeSentTimelineItem(body: String) -> RoomTimelineItemViewState {
-        RoomTimelineItemViewState(
-            messageId: UUID().uuidString,
-            senderDisplayName: sessionSnapshot.account?.displayName,
-            body: body,
-            sentAtLabel: Date().formatted(date: .omitted, time: .shortened),
-            direction: .outgoing,
-            deliveryState: .sent
-        )
     }
 
     private func roomInfo(roomID: String) async throws -> RoomInfo {

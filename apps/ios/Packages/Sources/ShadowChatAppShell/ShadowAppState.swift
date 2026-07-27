@@ -367,8 +367,13 @@ public final class ShadowAppState {
     }
 
     public func disablePushNotifications() async {
-        await clientService.unregisterPush()
-        pushRegistration = .unavailable
+        do {
+            try await clientService.unregisterPush()
+            pushRegistration = .unavailable
+        } catch {
+            pushRegistration = ShadowPushRegistration(state: .failed)
+            present(error)
+        }
     }
 
     public func clearError() {

@@ -7,6 +7,7 @@ enum MatrixSessionPersistenceError: Error {
     case randomGenerationFailed(OSStatus)
     case missingApplicationDirectory
     case missingSession
+    case ambiguousSessions
 }
 
 struct MatrixSessionDirectories: Codable, Equatable, Sendable {
@@ -71,10 +72,43 @@ struct MatrixSessionDirectories: Codable, Equatable, Sendable {
     }
 }
 
+struct MatrixPersistedPusherIdentifiers: Codable, Equatable, Sendable {
+    let pushKey: String
+    let appID: String
+
+    var sdkValue: PusherIdentifiers {
+        PusherIdentifiers(pushkey: pushKey, appId: appID)
+    }
+}
+
 struct MatrixRestorationToken: Codable, Sendable {
     let session: MatrixRustSDK.Session
     let directories: MatrixSessionDirectories
     let storePassphrase: String
+    let pusherIdentifiers: MatrixPersistedPusherIdentifiers?
+
+    init(
+        session: MatrixRustSDK.Session,
+        directories: MatrixSessionDirectories,
+        storePassphrase: String,
+        pusherIdentifiers: MatrixPersistedPusherIdentifiers? = nil
+    ) {
+        self.session = session
+        self.directories = directories
+        self.storePassphrase = storePassphrase
+        self.pusherIdentifiers = pusherIdentifiers
+    }
+
+    func updating(
+        pusherIdentifiers: MatrixPersistedPusherIdentifiers?
+    ) -> MatrixRestorationToken {
+        MatrixRestorationToken(
+            session: session,
+            directories: directories,
+            storePassphrase: storePassphrase,
+            pusherIdentifiers: pusherIdentifiers
+        )
+    }
 }
 
 extension MatrixRustSDK.Session: @retroactive Codable {
@@ -112,6 +146,7 @@ extension MatrixRustSDK.Session: @retroactive Codable {
 }
 
 final nonisolated class MatrixSessionKeychain: ClientSessionDelegate, @unchecked Sendable {
+    private static let activeAccountKey = "__shadowchat_active_account__"
     private let keychain: Keychain
 
     init(service: String = "de.shadowchat.ios.matrix.sessions") {
@@ -120,8 +155,24 @@ final nonisolated class MatrixSessionKeychain: ClientSessionDelegate, @unchecked
     }
 
     func activeToken() throws -> MatrixRestorationToken? {
-        guard let userID = keychain.allKeys().sorted().first,
-              let data = try keychain.getData(userID) else {
+        let userID: String
+        if let activeUserID = try keychain.get(Self.activeAccountKey) {
+            userID = activeUserID
+        } else {
+            let sessionKeys = keychain.allKeys().filter {
+                $0 != Self.activeAccountKey
+            }
+            guard !sessionKeys.isEmpty else {
+                return nil
+            }
+            guard sessionKeys.count == 1, let legacyUserID = sessionKeys.first else {
+                throw MatrixSessionPersistenceError.ambiguousSessions
+            }
+            userID = legacyUserID
+            try keychain.set(userID, key: Self.activeAccountKey)
+        }
+
+        guard let data = try keychain.getData(userID) else {
             return nil
         }
         return try JSONDecoder().decode(MatrixRestorationToken.self, from: data)
@@ -130,13 +181,14 @@ final nonisolated class MatrixSessionKeychain: ClientSessionDelegate, @unchecked
     func save(_ token: MatrixRestorationToken) throws {
         let encoded = try JSONEncoder().encode(token)
         try keychain.set(encoded, key: token.session.userId)
+        try keychain.set(token.session.userId, key: Self.activeAccountKey)
     }
 
-    func removeActiveToken() throws {
-        guard let userID = keychain.allKeys().sorted().first else {
-            return
-        }
+    func removeToken(userID: String) throws {
         try keychain.remove(userID)
+        if try keychain.get(Self.activeAccountKey) == userID {
+            try keychain.remove(Self.activeAccountKey)
+        }
     }
 
     func retrieveSessionFromKeychain(userId: String) throws -> MatrixRustSDK.Session {
@@ -154,12 +206,15 @@ final nonisolated class MatrixSessionKeychain: ClientSessionDelegate, @unchecked
                 return
             }
             let current = try JSONDecoder().decode(MatrixRestorationToken.self, from: data)
-            try save(
-                MatrixRestorationToken(
-                    session: session,
-                    directories: current.directories,
-                    storePassphrase: current.storePassphrase
-                )
+            let refreshed = MatrixRestorationToken(
+                session: session,
+                directories: current.directories,
+                storePassphrase: current.storePassphrase,
+                pusherIdentifiers: current.pusherIdentifiers
+            )
+            try keychain.set(
+                JSONEncoder().encode(refreshed),
+                key: session.userId
             )
         } catch {
             assertionFailure("Matrix session refresh could not be persisted: \(error)")

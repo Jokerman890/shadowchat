@@ -152,6 +152,7 @@ extension MatrixRustClientService {
 
         client = authenticatedClient
         activeToken = token
+        registeredPushIdentifiers = nil
         sessionSnapshot = snapshot
         return snapshot
     }

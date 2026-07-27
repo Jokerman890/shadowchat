@@ -29,10 +29,16 @@ private struct MatrixRoomTimelineRepository: RoomTimelineRepository {
         try await service.loadTimeline(roomID: roomId)
     }
 
+    func timelineUpdates(
+        roomId: String
+    ) async throws -> AsyncStream<RoomTimelineSnapshotViewState> {
+        try await service.timelineUpdates(roomID: roomId)
+    }
+
     func sendMessage(
         roomId: String,
         body: String
-    ) async throws -> RoomTimelineItemViewState {
+    ) async throws {
         try await service.sendMessage(roomID: roomId, body: body)
     }
 }

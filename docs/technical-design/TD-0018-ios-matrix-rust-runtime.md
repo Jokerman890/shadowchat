@@ -42,6 +42,7 @@ Das Restoration Token enthält:
 - Matrix-Sitzung mit Access- und optionalem Refresh-Token
 - Daten- und Cache-Verzeichnis
 - Store-Passphrase
+- optional die zum aktiven Account gehörenden APNs-Pusher-Identifikatoren
 
 Das Token liegt ausschließlich in einer Keychain mit
 `afterFirstUnlockThisDeviceOnly`. Daten- und Cache-Verzeichnisse sind vom
@@ -50,6 +51,10 @@ und Sitzungsverzeichnisse.
 
 `ClientSessionDelegate` schreibt rotierte Matrix-Tokens zurück in denselben
 Keychain-Eintrag.
+
+Ein eigener Keychain-Marker benennt den aktiven Account. Restore und Logout
+wählen deshalb niemals anhand einer lexikografisch sortierten Key-Liste. Beim
+Logout wird genau der Token des aktiven Accounts entfernt.
 
 ## Authentifizierung
 
@@ -74,10 +79,14 @@ Die Chatliste bildet ausschließlich beigetretene Nicht-Space-Räume auf
 Trust-Level.
 
 Für einen geöffneten Raum erzeugt der Adapter eine Live-Timeline und verarbeitet
-SDK-Diffs seriell im Actor. Die Feature-Grenze erhält ausschließlich Textnachrichten
-als `RoomTimelineItemViewState`; virtuelle, State- und noch nicht unterstützte
+SDK-Diffs seriell im Actor. Ein gepufferter `AsyncStream` liefert wertbasierte
+Snapshots an das Feature und beendet den Listener beim Verlassen des Raums. Das
+erste SDK-Update wird über ein explizites Signal mit Timeout erwartet. Die
+Feature-Grenze erhält ausschließlich Textnachrichten als
+`RoomTimelineItemViewState`; virtuelle, State- und noch nicht unterstützte
 Medienevents werden nicht als Text vorgetäuscht. Textversand nutzt die
-Markdown-Content-Fabrik des SDK.
+Markdown-Content-Fabrik des SDK; das SDK-Timeline-Event ist die einzige Quelle
+für lokales Echo und Serverstatus.
 
 ## Bridge-Verhalten
 
@@ -85,15 +94,20 @@ Matrix wird aus der aktiven Sitzung abgeleitet. WhatsApp und Signal werden als
 `unavailable` ausgegeben, solange kein mautrix-Management-Adapter konfiguriert ist.
 Die UI bietet in diesem Zustand keine wirkungslose Pairing-Aktion an.
 
-Die Build-Settings `SHADOW_WHATSAPP_MANAGEMENT_ROOM_ID` und
-`SHADOW_SIGNAL_MANAGEMENT_ROOM_ID` aktivieren die jeweiligen Adapter. ShadowChat
+Die Build-Settings `SHADOW_WHATSAPP_MANAGEMENT_ROOM_ID`,
+`SHADOW_WHATSAPP_BOT_USER_ID`, `SHADOW_SIGNAL_MANAGEMENT_ROOM_ID` und
+`SHADOW_SIGNAL_BOT_USER_ID` aktivieren die jeweiligen Adapter. ShadowChat
 sendet ausschließlich dokumentierte Management-Kommandos:
 
 - mautrix-whatsapp: `login qr`, `cancel`, `logout`
 - mautrix-signal: `login`, `cancel`, `logout`
 
 QR-Bilder werden als Matrix-Medien geladen. Ein Adapter meldet erst dann
-`connected`, wenn der Bridge-Bot eine erfolgreiche Login-Antwort geliefert hat.
+`connected`, wenn der konfigurierte Bridge-Bot in einem
+Ende-zu-Ende-verschlüsselten Management-Raum innerhalb der aktiven
+Pairing-Frist eine erfolgreiche Login-Antwort geliefert hat. Antworten anderer
+Absender und Antworten vor Beginn des konkreten Bestätigungsschritts werden
+ignoriert.
 Bridge-Räume behalten immer den Trust-Hinweis für externen Transport. Die
 Aufzählung von Ghost-/Puppet-Konten ist noch nicht durch einen stabilen
 mautrix-Managementvertrag gedeckt und liefert deshalb keine erfundenen Kontakte.
@@ -121,6 +135,10 @@ APNs-Berechtigung und Token-Empfang sind Main-Actor-gebunden. Der Service
 registriert den Base64-APNs-Token als `event_id_only` HTTP-Pusher über
 `Client.setPusher`. `SHADOW_PUSH_GATEWAY_URL` muss im Release-Build die vollständige
 HTTPS-Notify-Endpoint-URL enthalten. Ohne Wert bleibt Push bewusst deaktiviert.
+Die Pusher-Identifikatoren werden accountgebunden im Restoration Token
+gespeichert. Dadurch kann ShadowChat den serverseitigen Pusher auch nach einem
+Prozessneustart vor dem Logout entfernen; ein fehlgeschlagenes Entfernen
+blockiert den Logout, statt einen weiter aktiven Pusher still zu hinterlassen.
 
 `ShadowChatNSE` ist ein eigenes Swift-6-App-Extension-Target. Der aktuelle Slice
 ersetzt Serverinhalt durch „Neue verschlüsselte Nachricht“, übernimmt nur Room-
@@ -145,9 +163,10 @@ Der aktuelle Adapter ist funktional, aber noch nicht der Performance-Zielstand:
 
 - `loadChatList()` fragt `roomInfo()` derzeit seriell pro Raum ab.
 - `loadTimeline()` mappt beim Snapshot die vollständige gespeicherte Timeline.
-- Das erste Timeline-Update wird aktuell mit einer begrenzten Polling-Schleife
-  erwartet.
-- Timeline-Kontexte bleiben bis `stopSync()` oder Logout im Actor gespeichert.
+- Die UI-Grenze mappt bei jedem Diff derzeit noch den vollständigen
+  Timeline-Snapshot.
+- Timeline-Kontexte ohne UI-Subscriber bleiben für Bridge-Managementpfade bis
+  `stopSync()` oder Logout im Actor gespeichert.
 - einzelne Front-Inserts und Front-Removes können lineare Array-Kosten
   verursachen.
 

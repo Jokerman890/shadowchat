@@ -5,16 +5,20 @@ import ShadowCoreContracts
 struct MatrixBridgePairingContext {
     let bridge: ShadowBridgeKind
     let managementRoomID: String
-    let startedAt: Date
+    let botUserID: String
+    let confirmationStartedAt: Date
+    let expiresAt: Date
 }
 
 private struct MatrixBridgeConfiguration {
     let managementRoomID: String
+    let botUserID: String
     let loginCommand: String
     let capabilities: Set<ShadowBridgeCapability>
 
     static func configured(for bridge: ShadowBridgeKind) -> Self? {
-        let key: String
+        let roomKey: String
+        let botKey: String
         let command: String
         let capabilities: Set<ShadowBridgeCapability>
 
@@ -22,7 +26,8 @@ private struct MatrixBridgeConfiguration {
         case .matrix:
             return nil
         case .whatsApp:
-            key = "ShadowWhatsAppManagementRoomID"
+            roomKey = "ShadowWhatsAppManagementRoomID"
+            botKey = "ShadowWhatsAppBotUserID"
             command = "login qr"
             capabilities = [
                 .text,
@@ -34,7 +39,8 @@ private struct MatrixBridgeConfiguration {
                 .voiceMessages
             ]
         case .signal:
-            key = "ShadowSignalManagementRoomID"
+            roomKey = "ShadowSignalManagementRoomID"
+            botKey = "ShadowSignalBotUserID"
             command = "login"
             capabilities = [
                 .text,
@@ -49,13 +55,18 @@ private struct MatrixBridgeConfiguration {
         }
 
         guard let roomID = Bundle.main.object(
-            forInfoDictionaryKey: key
+            forInfoDictionaryKey: roomKey
         ) as? String,
-        !roomID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        !roomID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+        let botUserID = Bundle.main.object(
+            forInfoDictionaryKey: botKey
+        ) as? String,
+        !botUserID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return nil
         }
         return MatrixBridgeConfiguration(
             managementRoomID: roomID,
+            botUserID: botUserID,
             loginCommand: command,
             capabilities: capabilities
         )
@@ -105,8 +116,10 @@ extension MatrixRustClientService {
             )
             let response = try await waitForPairingResponse(
                 roomID: configuration.managementRoomID,
+                expectedBotUserID: configuration.botUserID,
                 after: startedAt
             )
+            let expiresAt = Date().addingTimeInterval(60)
             let pairing = ShadowPairingSession(
                 bridge: bridge,
                 state: .ready,
@@ -114,12 +127,14 @@ extension MatrixRustClientService {
                 qrCodeData: response.qrCodeData,
                 deviceName: deviceName,
                 createdAt: startedAt,
-                expiresAt: Date().addingTimeInterval(60)
+                expiresAt: expiresAt
             )
             pendingBridgePairings[pairing.id] = MatrixBridgePairingContext(
                 bridge: bridge,
                 managementRoomID: configuration.managementRoomID,
-                startedAt: startedAt
+                botUserID: configuration.botUserID,
+                confirmationStartedAt: Date(),
+                expiresAt: expiresAt
             )
             return pairing
         } catch {
@@ -130,16 +145,21 @@ extension MatrixRustClientService {
 
     func confirmPairing(sessionID: UUID) async throws -> ShadowBridgeSnapshot {
         guard let context = pendingBridgePairings[sessionID],
+              context.expiresAt > Date(),
               let configuration = MatrixBridgeConfiguration.configured(
                   for: context.bridge
-              ) else {
+              ),
+              configuration.managementRoomID == context.managementRoomID,
+              configuration.botUserID == context.botUserID else {
             throw ShadowServiceError.pairingExpired
         }
 
         do {
             let accountLabel = try await waitForPairingConfirmation(
                 roomID: context.managementRoomID,
-                after: context.startedAt
+                expectedBotUserID: context.botUserID,
+                after: context.confirmationStartedAt,
+                expiresAt: context.expiresAt
             )
             pendingBridgePairings[sessionID] = nil
             bridgeStates[context.bridge] = .connected
@@ -234,6 +254,9 @@ extension MatrixRustClientService {
         roomID: String
     ) async throws {
         let context = try await timelineContext(roomID: roomID)
+        guard context.securityState == .encrypted else {
+            throw ShadowServiceError.bridgeUnavailable
+        }
         _ = try await context.timeline.send(
             msg: messageEventContentFromMarkdown(md: command)
         )
@@ -241,11 +264,13 @@ extension MatrixRustClientService {
 
     private func waitForPairingResponse(
         roomID: String,
+        expectedBotUserID: String,
         after date: Date
     ) async throws -> MatrixBridgePairingResponse {
         for _ in 0..<150 {
             if let response = try await pairingResponse(
                 roomID: roomID,
+                expectedBotUserID: expectedBotUserID,
                 after: date
             ) {
                 return response
@@ -257,6 +282,7 @@ extension MatrixRustClientService {
 
     private func pairingResponse(
         roomID: String,
+        expectedBotUserID: String,
         after date: Date
     ) async throws -> MatrixBridgePairingResponse? {
         guard let client else {
@@ -267,6 +293,7 @@ extension MatrixRustClientService {
         for item in context.items.reversed() {
             guard let event = item.asEvent(),
                   !event.isOwn,
+                  event.sender == expectedBotUserID,
                   Date(
                       timeIntervalSince1970: TimeInterval(event.timestamp) / 1_000
                   ) >= date,
@@ -307,11 +334,14 @@ extension MatrixRustClientService {
 
     private func waitForPairingConfirmation(
         roomID: String,
-        after date: Date
+        expectedBotUserID: String,
+        after date: Date,
+        expiresAt: Date
     ) async throws -> String? {
-        for _ in 0..<300 {
+        while Date() < expiresAt {
             if let confirmation = pairingConfirmation(
                 roomID: roomID,
+                expectedBotUserID: expectedBotUserID,
                 after: date
             ) {
                 return confirmation
@@ -323,12 +353,14 @@ extension MatrixRustClientService {
 
     private func pairingConfirmation(
         roomID: String,
+        expectedBotUserID: String,
         after date: Date
     ) -> String? {
         guard let items = timelines[roomID]?.items else { return nil }
         for item in items.reversed() {
             guard let event = item.asEvent(),
                   !event.isOwn,
+                  event.sender == expectedBotUserID,
                   Date(
                       timeIntervalSince1970: TimeInterval(event.timestamp) / 1_000
                   ) >= date,

@@ -54,7 +54,7 @@ public protocol ShadowPushService: Actor {
         deviceToken: Data,
         gatewayURL: URL
     ) async throws -> ShadowPushRegistration
-    func unregisterPush() async
+    func unregisterPush() async throws
 }
 
 public protocol ShadowClientService:
