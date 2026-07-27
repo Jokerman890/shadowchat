@@ -1,25 +1,16 @@
 import Foundation
 import MatrixRustSDK
-import ShadowChatListFeature
 import ShadowCoreContracts
-import ShadowRoomTimelineFeature
 
 actor MatrixRustClientService: ShadowClientService {
     nonisolated let runtimeEnvironment = ShadowRuntimeEnvironment.matrix
 
-    private struct TimelineContext {
-        let timeline: Timeline
-        var observationToken: TaskHandle?
-        var items: [TimelineItem]
-        var receivedInitialUpdate: Bool
-    }
-
     private let keychain: MatrixSessionKeychain
-    private var client: Client?
+    var client: Client?
     private var syncService: SyncService?
     private var activeToken: MatrixRestorationToken?
-    private var sessionSnapshot: ShadowSessionSnapshot
-    private var timelines: [String: TimelineContext] = [:]
+    var sessionSnapshot: ShadowSessionSnapshot
+    var timelines: [String: MatrixTimelineContext] = [:]
 
     init(keychain: MatrixSessionKeychain = MatrixSessionKeychain()) {
         self.keychain = keychain
@@ -85,24 +76,11 @@ actor MatrixRustClientService: ShadowClientService {
         let passphrase = try SecurePassphraseGenerator.make()
 
         do {
-            let authenticatedClient = try await ClientBuilder()
-                .setSessionDelegate(sessionDelegate: keychain)
-                .slidingSyncVersionBuilder(versionBuilder: .discoverNative)
-                .autoEnableCrossSigning(autoEnableCrossSigning: true)
-                .autoEnableBackups(autoEnableBackups: true)
-                .backupDownloadStrategy(backupDownloadStrategy: .afterDecryptionFailure)
-                .enableShareHistoryOnInvite(enableShareHistoryOnInvite: true)
-                .sqliteStore(
-                    config: .init(
-                        dataPath: directories.dataPath,
-                        cachePath: directories.cachePath
-                    )
-                    .passphrase(passphrase: passphrase)
-                )
-                .serverNameOrHomeserverUrl(
-                    serverNameOrUrl: request.homeserver.absoluteString
-                )
-                .build()
+            let authenticatedClient = try await makeAuthenticationClient(
+                homeserver: request.homeserver,
+                directories: directories,
+                passphrase: passphrase
+            )
 
             try await authenticatedClient.login(
                 username: username,
@@ -131,6 +109,29 @@ actor MatrixRustClientService: ShadowClientService {
             try? directories.remove()
             throw mapError(error)
         }
+    }
+
+    private func makeAuthenticationClient(
+        homeserver: URL,
+        directories: MatrixSessionDirectories,
+        passphrase: String
+    ) async throws -> Client {
+        try await ClientBuilder()
+            .setSessionDelegate(sessionDelegate: keychain)
+            .slidingSyncVersionBuilder(versionBuilder: .discoverNative)
+            .autoEnableCrossSigning(autoEnableCrossSigning: true)
+            .autoEnableBackups(autoEnableBackups: true)
+            .backupDownloadStrategy(backupDownloadStrategy: .afterDecryptionFailure)
+            .enableShareHistoryOnInvite(enableShareHistoryOnInvite: true)
+            .sqliteStore(
+                config: .init(
+                    dataPath: directories.dataPath,
+                    cachePath: directories.cachePath
+                )
+                .passphrase(passphrase: passphrase)
+            )
+            .serverNameOrHomeserverUrl(serverNameOrUrl: homeserver.absoluteString)
+            .build()
     }
 
     func currentSession() async -> ShadowSessionSnapshot {
@@ -171,8 +172,7 @@ actor MatrixRustClientService: ShadowClientService {
     func stopSync() async {
         await syncService?.stop()
         syncService = nil
-        timelines.values.forEach { $0.observationToken?.cancel() }
-        timelines.removeAll()
+        resetTimelines()
 
         if sessionSnapshot.state.grantsMessagingAccess {
             sessionSnapshot = ShadowSessionSnapshot(
@@ -255,215 +255,6 @@ actor MatrixRustClientService: ShadowClientService {
         return []
     }
 
-    func loadChatList() async throws -> [ChatListItemViewState] {
-        guard let client else {
-            throw ShadowServiceError.sessionExpired
-        }
-
-        do {
-            var rooms: [ChatListItemViewState] = []
-            for room in client.rooms() {
-                let info = try room.roomInfo()
-                guard info.membership == .joined, !info.isSpace else {
-                    continue
-                }
-
-                let title = info.displayName?.nonEmpty
-                    ?? info.canonicalAlias?.nonEmpty
-                    ?? info.id
-                let unreadCount = Int(clamping: info.numUnreadMessages)
-                let encrypted = info.encryptionState == .encrypted
-
-                rooms.append(
-                    ChatListItemViewState(
-                        roomId: info.id,
-                        title: title,
-                        previewText: encrypted
-                            ? "Ende-zu-Ende verschlüsselter Matrix-Raum"
-                            : "Matrix-Raum ohne Ende-zu-Ende-Verschlüsselung",
-                        unreadCount: unreadCount,
-                        trustLevel: encrypted ? .standard : .reduced,
-                        isFavorite: info.isFavourite
-                    )
-                )
-            }
-
-            return rooms.sorted {
-                if $0.isFavorite != $1.isFavorite {
-                    return $0.isFavorite
-                }
-                if $0.unreadCount != $1.unreadCount {
-                    return $0.unreadCount > $1.unreadCount
-                }
-                return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
-            }
-        } catch {
-            throw mapError(error)
-        }
-    }
-
-    func loadTimeline(roomID: String) async throws -> RoomTimelineSnapshotViewState {
-        let context = try await timelineContext(roomID: roomID)
-        let roomTitle = try roomInfo(roomID: roomID).displayName
-        return RoomTimelineSnapshotViewState(
-            roomId: roomID,
-            roomTitle: roomTitle,
-            items: context.items.compactMap(makeTimelineItem)
-        )
-    }
-
-    func sendMessage(
-        roomID: String,
-        body: String
-    ) async throws -> RoomTimelineItemViewState {
-        let normalizedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !normalizedBody.isEmpty else {
-            throw RoomTimelineRepositoryError.sendingUnavailable
-        }
-
-        do {
-            let context = try await timelineContext(roomID: roomID)
-            let content = messageEventContentFromMarkdown(md: normalizedBody)
-            _ = try await context.timeline.send(msg: content)
-            return RoomTimelineItemViewState(
-                messageId: UUID().uuidString,
-                senderDisplayName: sessionSnapshot.account?.displayName,
-                body: normalizedBody,
-                sentAtLabel: Date().formatted(date: .omitted, time: .shortened),
-                direction: .outgoing,
-                deliveryState: .sent
-            )
-        } catch {
-            throw mapError(error)
-        }
-    }
-
-    private func timelineContext(roomID: String) async throws -> TimelineContext {
-        if let context = timelines[roomID] {
-            return context
-        }
-
-        guard let client,
-              let room = try client.getRoom(roomId: roomID) else {
-            throw ShadowServiceError.unknown("Der Matrix-Raum wurde nicht gefunden.")
-        }
-
-        let timeline = try await room.timelineWithConfiguration(
-            configuration: .init(
-                focus: .live(hideThreadedEvents: false),
-                filter: .all,
-                internalIdPrefix: nil,
-                dateDividerMode: .daily,
-                trackReadReceipts: .messageLikeEvents,
-                reportUtds: true
-            )
-        )
-        timelines[roomID] = TimelineContext(
-            timeline: timeline,
-            observationToken: nil,
-            items: [],
-            receivedInitialUpdate: false
-        )
-
-        let listener = MatrixTimelineListener { [weak self] diffs in
-            Task {
-                await self?.applyTimelineDiffs(diffs, roomID: roomID)
-            }
-        }
-        let token = await timeline.addListener(listener: listener)
-        timelines[roomID]?.observationToken = token
-
-        for _ in 0..<100 where timelines[roomID]?.receivedInitialUpdate == false {
-            try await Task.sleep(for: .milliseconds(10))
-        }
-
-        guard let context = timelines[roomID] else {
-            throw ShadowServiceError.unknown("Die Matrix-Timeline konnte nicht geöffnet werden.")
-        }
-        return context
-    }
-
-    private func applyTimelineDiffs(_ diffs: [TimelineDiff], roomID: String) {
-        guard var context = timelines[roomID] else {
-            return
-        }
-
-        for diff in diffs {
-            switch diff {
-            case .append(let items):
-                context.items.append(contentsOf: items)
-            case .clear:
-                context.items.removeAll()
-            case .insert(let index, let item):
-                context.items.insert(item, at: min(Int(index), context.items.count))
-            case .popBack:
-                if !context.items.isEmpty {
-                    context.items.removeLast()
-                }
-            case .popFront:
-                if !context.items.isEmpty {
-                    context.items.removeFirst()
-                }
-            case .pushBack(let item):
-                context.items.append(item)
-            case .pushFront(let item):
-                context.items.insert(item, at: 0)
-            case .remove(let index):
-                if context.items.indices.contains(Int(index)) {
-                    context.items.remove(at: Int(index))
-                }
-            case .reset(let items):
-                context.items = Array(items)
-            case .set(let index, let item):
-                if context.items.indices.contains(Int(index)) {
-                    context.items[Int(index)] = item
-                }
-            case .truncate(let length):
-                context.items = Array(context.items.prefix(Int(length)))
-            }
-        }
-        context.receivedInitialUpdate = true
-        timelines[roomID] = context
-    }
-
-    private func makeTimelineItem(_ item: TimelineItem) -> RoomTimelineItemViewState? {
-        guard let event = item.asEvent(),
-              case .msgLike(let messageLike) = event.content,
-              case .message(let message) = messageLike.kind else {
-            return nil
-        }
-
-        let deliveryState: RoomTimelineDeliveryState
-        switch event.localSendState {
-        case .notSentYet:
-            deliveryState = .sending
-        case .sendingFailed:
-            deliveryState = .failed
-        case .sent:
-            deliveryState = .sent
-        case nil:
-            deliveryState = .delivered
-        }
-
-        let date = Date(timeIntervalSince1970: TimeInterval(event.timestamp) / 1_000)
-        return RoomTimelineItemViewState(
-            messageId: String(describing: item.uniqueId()),
-            senderDisplayName: event.isOwn ? sessionSnapshot.account?.displayName : event.sender,
-            body: message.body,
-            sentAtLabel: date.formatted(date: .omitted, time: .shortened),
-            direction: event.isOwn ? .outgoing : .incoming,
-            deliveryState: deliveryState
-        )
-    }
-
-    private func roomInfo(roomID: String) throws -> RoomInfo {
-        guard let client,
-              let room = try client.getRoom(roomId: roomID) else {
-            throw ShadowServiceError.unknown("Der Matrix-Raum wurde nicht gefunden.")
-        }
-        return try room.roomInfo()
-    }
-
     private func makeSessionSnapshot(
         client: Client,
         state: ShadowSessionState,
@@ -518,7 +309,7 @@ actor MatrixRustClientService: ShadowClientService {
         )
     }
 
-    private func mapError(_ error: any Error) -> ShadowServiceError {
+    func mapError(_ error: any Error) -> ShadowServiceError {
         if let error = error as? ShadowServiceError {
             return error
         }
@@ -541,11 +332,5 @@ actor MatrixRustClientService: ShadowClientService {
             return .serverDiscoveryFailed
         }
         return .unknown(message)
-    }
-}
-
-private extension String {
-    var nonEmpty: String? {
-        isEmpty ? nil : self
     }
 }
