@@ -20,5 +20,6 @@ Hier liegen wiederverwendbare iOS-Module wie Design, Motion, Navigation, Service
 Auf macOS mit Xcode:
 - `xcodebuild -list`
 - `xcodebuild test -scheme ShadowChatMobile -destination "platform=iOS Simulator,name=<iPhone Simulator>"`
+- `xcodebuild test -scheme ShadowChatMobile -destination "platform=iOS Simulator,name=<iPhone Simulator>" -only-testing:ShadowRoomTimelineFeatureTests/RoomTimelinePerformanceTests`
 
 Auf Windows ist Swift/Xcode in der Regel nicht verfügbar; die iOS-Validierung erfolgt über macOS/Xcode oder CI.

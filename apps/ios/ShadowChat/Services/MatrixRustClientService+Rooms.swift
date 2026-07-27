@@ -216,7 +216,10 @@ extension MatrixRustClientService {
             roomId: roomID,
             roomTitle: context.roomTitle,
             securityState: context.securityState,
-            items: context.items.compactMap(makeTimelineItem)
+            items: RoomTimelineProjection.map(
+                context.items,
+                transform: makeTimelineItem
+            )
         )
     }
 
@@ -235,17 +238,17 @@ extension MatrixRustClientService {
     ) {
         switch diff {
         case .append(let appended):
-            items.append(contentsOf: appended)
+            RoomTimelineCollectionReducer.append(appended, to: &items)
         case .clear:
-            items.removeAll()
+            RoomTimelineCollectionReducer.clear(&items)
         case .insert(let index, let item):
-            items.insert(item, at: min(Int(index), items.count))
+            RoomTimelineCollectionReducer.insert(item, at: Int(index), in: &items)
         case .reset(let replacement):
-            items = Array(replacement)
+            RoomTimelineCollectionReducer.reset(Array(replacement), in: &items)
         case .set(let index, let item):
-            replace(item, at: Int(index), in: &items)
+            RoomTimelineCollectionReducer.set(item, at: Int(index), in: &items)
         case .truncate(let length):
-            items = Array(items.prefix(Int(length)))
+            RoomTimelineCollectionReducer.truncate(&items, to: Int(length))
         default:
             return
         }
@@ -257,40 +260,18 @@ extension MatrixRustClientService {
     ) {
         switch diff {
         case .popBack:
-            if !items.isEmpty {
-                items.removeLast()
-            }
+            RoomTimelineCollectionReducer.popBack(&items)
         case .popFront:
-            if !items.isEmpty {
-                items.removeFirst()
-            }
+            RoomTimelineCollectionReducer.popFront(&items)
         case .pushBack(let item):
-            items.append(item)
+            RoomTimelineCollectionReducer.pushBack(item, to: &items)
         case .pushFront(let item):
-            items.insert(item, at: 0)
+            RoomTimelineCollectionReducer.pushFront(item, to: &items)
         case .remove(let index):
-            removeItem(at: Int(index), from: &items)
+            RoomTimelineCollectionReducer.remove(at: Int(index), from: &items)
         default:
             return
         }
-    }
-
-    private func replace(
-        _ item: TimelineItem,
-        at index: Int,
-        in items: inout [TimelineItem]
-    ) {
-        guard items.indices.contains(index) else {
-            return
-        }
-        items[index] = item
-    }
-
-    private func removeItem(at index: Int, from items: inout [TimelineItem]) {
-        guard items.indices.contains(index) else {
-            return
-        }
-        items.remove(at: index)
     }
 
     private func makeChatListItem(_ info: RoomInfo) -> ChatListItemViewState {
