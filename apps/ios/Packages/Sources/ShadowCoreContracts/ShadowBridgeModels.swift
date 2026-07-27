@@ -128,6 +128,7 @@ public struct ShadowPairingSession: Codable, Equatable, Identifiable, Sendable {
     public let bridge: ShadowBridgeKind
     public let state: ShadowPairingState
     public let payload: String
+    public let qrCodeData: Data?
     public let deviceName: String
     public let createdAt: Date
     public let expiresAt: Date
@@ -137,6 +138,7 @@ public struct ShadowPairingSession: Codable, Equatable, Identifiable, Sendable {
         bridge: ShadowBridgeKind,
         state: ShadowPairingState,
         payload: String,
+        qrCodeData: Data? = nil,
         deviceName: String,
         createdAt: Date = Date(),
         expiresAt: Date
@@ -145,6 +147,7 @@ public struct ShadowPairingSession: Codable, Equatable, Identifiable, Sendable {
         self.bridge = bridge
         self.state = state
         self.payload = payload
+        self.qrCodeData = qrCodeData
         self.deviceName = deviceName
         self.createdAt = createdAt
         self.expiresAt = expiresAt

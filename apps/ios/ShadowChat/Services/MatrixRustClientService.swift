@@ -16,6 +16,10 @@ actor MatrixRustClientService: ShadowClientService {
     var verificationController: SessionVerificationController?
     var verificationDelegate: MatrixSessionVerificationDelegate?
     var registeredPushIdentifiers: PusherIdentifiers?
+    var bridgeStates: [
+        ShadowBridgeKind: ShadowBridgeConnectionState
+    ] = [:]
+    var pendingBridgePairings: [UUID: MatrixBridgePairingContext] = [:]
     var verificationStateListener: TaskHandle?
     var recoveryStateListener, backupStateListener: TaskHandle?
     var securityContinuations: [

@@ -1,6 +1,7 @@
 import ShadowCoreContracts
 import ShadowDesignSystem
 import SwiftUI
+import UIKit
 
 struct ShadowBridgeHubView: View {
     let appState: ShadowAppState
@@ -153,25 +154,49 @@ struct ShadowPairingView: View {
     var body: some View {
         ShadowLiquidBackground {
             VStack(spacing: ShadowSpacing.xl) {
-                Image(systemName: "qrcode")
-                    .font(.system(size: 92, weight: .regular))
-                    .foregroundStyle(ShadowColors.whatsAppGreen)
-                    .accessibilityLabel("QR-Kopplungscode")
+                if let data = pairing.qrCodeData,
+                   let image = UIImage(data: data) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .interpolation(.none)
+                        .scaledToFit()
+                        .frame(maxWidth: 280, maxHeight: 280)
+                        .background(.white)
+                        .clipShape(
+                            RoundedRectangle(
+                                cornerRadius: ShadowRadii.control
+                            )
+                        )
+                        .accessibilityLabel("QR-Kopplungscode")
+                } else {
+                    Image(systemName: "qrcode")
+                        .font(.system(size: 92, weight: .regular))
+                        .foregroundStyle(ShadowColors.whatsAppGreen)
+                        .accessibilityLabel("QR-Kopplungscode")
+                }
 
                 VStack(spacing: ShadowSpacing.sm) {
                     Text("\(pairing.bridge.displayName) koppeln")
                         .font(.title2.weight(.bold))
-                    Text("Öffne die Geräteverwaltung des externen Messengers und bestätige anschließend die lokale Vorschau.")
+                    Text(pairingInstructions)
                         .foregroundStyle(ShadowColors.softText)
                         .multilineTextAlignment(.center)
                 }
 
-                Text(pairing.payload)
-                    .font(.caption.monospaced())
-                    .lineLimit(2)
-                    .padding(ShadowSpacing.md)
-                    .frame(maxWidth: .infinity)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: ShadowRadii.control))
+                if !pairing.payload.isEmpty {
+                    Text(pairing.payload)
+                        .font(.caption.monospaced())
+                        .lineLimit(3)
+                        .textSelection(.enabled)
+                        .padding(ShadowSpacing.md)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            .ultraThinMaterial,
+                            in: RoundedRectangle(
+                                cornerRadius: ShadowRadii.control
+                            )
+                        )
+                }
 
                 HStack {
                     Button("Abbrechen", action: cancel)
@@ -182,6 +207,17 @@ struct ShadowPairingView: View {
                 }
             }
             .padding(ShadowSpacing.xl)
+        }
+    }
+
+    private var pairingInstructions: String {
+        switch pairing.bridge {
+        case .whatsApp:
+            "Öffne in WhatsApp „Verknüpfte Geräte“ und scanne den Code."
+        case .signal:
+            "Öffne in Signal „Verknüpfte Geräte“ und scanne den Code."
+        case .matrix:
+            "Bestätige die Matrix-Geräteverbindung."
         }
     }
 }

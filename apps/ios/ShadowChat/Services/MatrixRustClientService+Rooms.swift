@@ -66,7 +66,7 @@ extension MatrixRustClientService {
         timelines.removeAll()
     }
 
-    private func timelineContext(roomID: String) async throws -> MatrixTimelineContext {
+    func timelineContext(roomID: String) async throws -> MatrixTimelineContext {
         if let context = timelines[roomID] {
             return context
         }
