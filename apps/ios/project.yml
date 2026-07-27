@@ -67,7 +67,6 @@ targets:
     deploymentTarget: "18.0"
     sources:
       - path: ShadowChat
-        group: App
     dependencies:
       - package: ShadowChatMobile
         product: ShadowChatAppShell

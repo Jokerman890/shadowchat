@@ -180,7 +180,9 @@ private struct TimelineComposer: View {
                     "Nachricht",
                     text: Binding(
                         get: { draft },
-                        set: draftChanged
+                        set: { updatedDraft in
+                            draftChanged(updatedDraft)
+                        }
                     ),
                     axis: .vertical
                 )
