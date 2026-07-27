@@ -5,9 +5,6 @@ import SwiftUI
 struct ShadowSettingsView: View {
     let appState: ShadowAppState
 
-    @State private var appLockEnabled = true
-    @State private var readReceiptsEnabled = true
-    @State private var linkPreviewsEnabled = false
     @State private var presentsSecurityCenter = false
 
     var body: some View {
@@ -30,10 +27,6 @@ struct ShadowSettingsView: View {
                     }
 
                     Section("Security Center") {
-                        Toggle("App-Sperre", isOn: $appLockEnabled)
-                        Toggle("Lesebestätigungen", isOn: $readReceiptsEnabled)
-                        Toggle("Link-Vorschauen", isOn: $linkPreviewsEnabled)
-
                         Label(
                             "Gerät: \(appState.session.account?.deviceID ?? "Nicht registriert")",
                             systemImage: appState.security.deviceTrust.symbolName

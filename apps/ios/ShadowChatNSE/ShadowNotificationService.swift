@@ -3,10 +3,15 @@ import Foundation
 
 final nonisolated class ShadowNotificationService:
     UNNotificationServiceExtension {
-    private let deliveries = ShadowNotificationDeliveryRegistry()
-    private lazy var processor = ShadowNotificationProcessor(
-        deliveries: deliveries
-    )
+    private let deliveries: ShadowNotificationDeliveryRegistry
+    private let processor: ShadowNotificationProcessor
+
+    override init() {
+        let deliveries = ShadowNotificationDeliveryRegistry()
+        self.deliveries = deliveries
+        processor = ShadowNotificationProcessor(deliveries: deliveries)
+        super.init()
+    }
 
     override func didReceive(
         _ request: UNNotificationRequest,
@@ -18,7 +23,6 @@ final nonisolated class ShadowNotificationService:
             fallback: request.content,
             handler: contentHandler
         )
-        let processor = processor
         Task {
             await processor.process(request)
         }

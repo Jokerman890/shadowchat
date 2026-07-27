@@ -4,11 +4,22 @@ import ShadowCoreContracts
 actor PreviewShadowClientService: ShadowClientService {
     nonisolated let runtimeEnvironment = ShadowRuntimeEnvironment.localPreview
 
-    private var session = ShadowSessionSnapshot.signedOutPreview
+    private var session: ShadowSessionSnapshot
+    private let restoredSession: ShadowSessionSnapshot?
+    private let failsSyncStart: Bool
+    private var pushRegistration: ShadowPushRegistration
     private var bridges: [ShadowBridgeKind: ShadowBridgeSnapshot]
     private var pairingSessions: [UUID: ShadowPairingSession] = [:]
 
-    init() {
+    init(
+        restoredSession: ShadowSessionSnapshot? = nil,
+        pushRegistration: ShadowPushRegistration = .unavailable,
+        failsSyncStart: Bool = false
+    ) {
+        session = restoredSession ?? .signedOutPreview
+        self.restoredSession = restoredSession
+        self.pushRegistration = pushRegistration
+        self.failsSyncStart = failsSyncStart
         bridges = [
             .matrix: ShadowBridgeSnapshot(
                 kind: .matrix,
@@ -104,10 +115,14 @@ actor PreviewShadowClientService: ShadowClientService {
         throw ShadowServiceError.unsupportedOperation
     }
 
+    func currentPushRegistration() async -> ShadowPushRegistration {
+        pushRegistration
+    }
+
     func unregisterPush() async throws {}
 
     func restoreSession() async throws -> ShadowSessionSnapshot? {
-        nil
+        restoredSession
     }
 
     func signIn(_ request: ShadowLoginRequest) async throws -> ShadowSessionSnapshot {
@@ -160,6 +175,9 @@ actor PreviewShadowClientService: ShadowClientService {
     }
 
     func startSync() async throws -> ShadowSessionSnapshot {
+        if failsSyncStart {
+            throw ShadowServiceError.networkUnavailable
+        }
         guard session.state == .active else {
             throw ShadowServiceError.sessionExpired
         }

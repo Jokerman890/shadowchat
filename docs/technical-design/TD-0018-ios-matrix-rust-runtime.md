@@ -24,10 +24,11 @@ SDK-Handles werden nicht durch eine zusätzliche ShadowChat-FFI geleitet.
 
 ## Laufzeitkomposition
 
-`ShadowChatApp` erzeugt genau eine Instanz von `MatrixRustClientService`. Derselbe
-Actor wird in `ShadowAppState` sowie in die Chatlisten- und Timeline-Repositories
-injiziert. Dadurch teilen Authentifizierung, Sync und Features einen Client und
-einen Crypto-Store.
+`ShadowAppComposition` erzeugt genau eine Instanz von
+`MatrixRustClientService`. Derselbe Actor wird in `ShadowAppState` sowie in die
+Chatlisten- und Timeline-Repositories injiziert. Dadurch teilen
+Authentifizierung, Sync und Features einen Client und einen Crypto-Store. Der
+SwiftUI-App-Einstieg bleibt von konkreten Matrix-Implementierungstypen entkoppelt.
 
 Die lokale `PreviewShadowClientService` bleibt ausschließlich für Previews und
 deterministische App-Shell-Tests erhalten.
@@ -55,6 +56,11 @@ Keychain-Eintrag.
 Ein eigener Keychain-Marker benennt den aktiven Account. Restore und Logout
 wählen deshalb niemals anhand einer lexikografisch sortierten Key-Liste. Beim
 Logout wird genau der Token des aktiven Accounts entfernt.
+
+Schlägt der Sync-Start unmittelbar nach Passwort- oder OAuth-Anmeldung fehl,
+führt der App-State einen destruktiven lokalen Logout aus. Dadurch bleiben weder
+eine wiederherstellbare Session noch ein authentifizierter Matrix-Client hinter
+einer abgemeldeten UI bestehen.
 
 ## Authentifizierung
 
@@ -136,9 +142,16 @@ registriert den Base64-APNs-Token als `event_id_only` HTTP-Pusher über
 `Client.setPusher`. `SHADOW_PUSH_GATEWAY_URL` muss im Release-Build die vollständige
 HTTPS-Notify-Endpoint-URL enthalten. Ohne Wert bleibt Push bewusst deaktiviert.
 Die Pusher-Identifikatoren werden accountgebunden im Restoration Token
-gespeichert. Dadurch kann ShadowChat den serverseitigen Pusher auch nach einem
-Prozessneustart vor dem Logout entfernen; ein fehlgeschlagenes Entfernen
-blockiert den Logout, statt einen weiter aktiven Pusher still zu hinterlassen.
+gespeichert. Der App-State stellt diesen registrierten Zustand nach einem
+Prozessneustart wieder her. Die APNs-Registrierung besitzt einen begrenzten
+20-Sekunden-Wartepfad und reagiert auf Task-Abbruch, sodass kein wartender
+Continuation-Pfad dauerhaft hängt.
+
+Debug-Builds verwenden das APNs-Development-Environment, Release-Builds das
+Production-Environment. Bei einem destruktiven Logout sind Pusher-Entfernung und
+Remote-Logout Best Effort: Lokaler Keychain-Eintrag und Matrix-Verzeichnisse
+werden trotzdem gelöscht. Ein lokaler Löschfehler bleibt sichtbar, nachdem der
+In-Memory-State bereits sicher auf abgemeldet gesetzt wurde.
 
 `ShadowChatNSE` ist ein eigenes Swift-6-App-Extension-Target. Der aktuelle Slice
 ersetzt Serverinhalt durch „Neue verschlüsselte Nachricht“, übernimmt nur Room-
@@ -146,6 +159,10 @@ und Event-ID für den Open-Flow und liefert beim Zeitlimit den Original-Fallback
 genau einmal aus. Er behauptet keine Ereignisentschlüsselung. Dafür sind vor
 Release ein echtes Apple Development Team, der gemeinsame Keychain Access Group
 und ein MatrixRustSDK-NSE-Client erforderlich.
+
+Beim Antippen liest der App-Delegate `shadowchat_room_id` (mit `room_id` als
+Fallback) und übergibt die Route an den App-Shell. Die Navigation wird erst in
+einer authentifizierten Shell konsumiert.
 
 ## Concurrency
 

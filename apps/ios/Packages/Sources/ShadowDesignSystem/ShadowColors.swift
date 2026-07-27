@@ -23,6 +23,10 @@ public enum ShadowColors {
     public static let softText = Color(.secondaryLabel)
     public static let incomingBubble = Color(red: 0.11, green: 0.125, blue: 0.13)
     public static let outgoingBubble = Color(red: 0.025, green: 0.30, blue: 0.24)
+    public static let lightBackgroundStart = Color(red: 0.94, green: 0.98, blue: 0.96)
+    public static let lightBackgroundMiddle = Color(red: 0.88, green: 0.96, blue: 0.92)
+    public static let lightBackgroundEnd = Color(red: 0.92, green: 0.98, blue: 0.97)
+    public static let lightCanvas = Color.white
 
     public static func trustColor(for tone: ShadowTrustTone) -> Color {
         switch tone {

@@ -50,6 +50,7 @@ public protocol ShadowSecurityService: Actor {
 }
 
 public protocol ShadowPushService: Actor {
+    func currentPushRegistration() async -> ShadowPushRegistration
     func registerPush(
         deviceToken: Data,
         gatewayURL: URL

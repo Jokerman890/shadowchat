@@ -37,12 +37,14 @@ settings:
     SHADOW_WHATSAPP_BOT_USER_ID: ""
   configs:
     Debug:
+      SHADOW_APS_ENVIRONMENT: development
       SWIFT_COMPILATION_MODE: incremental
       SWIFT_OPTIMIZATION_LEVEL: "-Onone"
       DEBUG_INFORMATION_FORMAT: dwarf
       ENABLE_TESTABILITY: YES
       ONLY_ACTIVE_ARCH: YES
     Release:
+      SHADOW_APS_ENVIRONMENT: production
       SWIFT_COMPILATION_MODE: wholemodule
       SWIFT_OPTIMIZATION_LEVEL: "-O"
       DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"

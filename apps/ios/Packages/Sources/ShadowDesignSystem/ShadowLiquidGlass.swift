@@ -51,10 +51,10 @@ public struct ShadowLiquidBackground<Content: View>: View {
         }
 
         return [
-            Color(red: 0.94, green: 0.98, blue: 0.96),
-            Color(red: 0.88, green: 0.96, blue: 0.92),
-            Color(red: 0.92, green: 0.98, blue: 0.97),
-            Color.white
+            ShadowColors.lightBackgroundStart,
+            ShadowColors.lightBackgroundMiddle,
+            ShadowColors.lightBackgroundEnd,
+            ShadowColors.lightCanvas
         ]
     }
 }

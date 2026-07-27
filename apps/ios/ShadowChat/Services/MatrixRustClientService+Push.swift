@@ -3,6 +3,14 @@ import MatrixRustSDK
 import ShadowCoreContracts
 
 extension MatrixRustClientService {
+    func currentPushRegistration() async -> ShadowPushRegistration {
+        guard registeredPushIdentifiers != nil
+            || activeToken?.pusherIdentifiers != nil else {
+            return .unavailable
+        }
+        return ShadowPushRegistration(state: .registered)
+    }
+
     func registerPush(
         deviceToken: Data,
         gatewayURL: URL

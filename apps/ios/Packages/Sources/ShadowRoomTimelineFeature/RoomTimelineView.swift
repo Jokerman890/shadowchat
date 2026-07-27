@@ -267,6 +267,8 @@ private struct TimelineComposer: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
+                .accessibilityLabel(isSending ? "Nachricht wird gesendet" : "Senden")
+                .accessibilityValue(isSending ? "In Bearbeitung" : "")
             }
             .padding(.horizontal, ShadowSpacing.md)
             .padding(.vertical, ShadowSpacing.sm)

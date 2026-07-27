@@ -37,6 +37,11 @@ Das Modul importiert weder SwiftUI noch MatrixRustSDK.
 
 `PreviewShadowClientService` ist ein Actor für deterministische lokale Produktflüsse. Die Onboarding-UI kennzeichnet diesen Modus sichtbar. Der Service speichert keine Zugangsdaten und führt keine Netzwerkzugriffe aus. Der ausgelieferte App-Einstieg injiziert dagegen `MatrixRustClientService`.
 
+Die produktive Objektkomposition liegt in `ShadowAppComposition`. Der SwiftUI-
+App-Einstieg kennt nur `ShadowAppState`, `ShadowRepositoryProvider` und den
+Notification-Router; konkrete Matrix-Services werden nicht im Scene-Aufbau
+verdrahtet.
+
 ### Room Timeline
 
 `RoomTimelineRepository` besitzt zusätzlich zu `loadTimeline` einen
@@ -57,6 +62,15 @@ Nach einer aktiven Sitzung zeigt die Root View vier Bereiche:
 4. Einstellungen / Security Center
 
 Room-Navigation bleibt im App-Shell, während Chat-Liste und Timeline stateless Feature-Views bleiben.
+
+Ein `ShadowNotificationRouter` übergibt die normalisierte Raum-ID aus einer
+angetippten Push-Benachrichtigung an den authentifizierten Shell. Die ausstehende
+Route wird genau einmal konsumiert, wechselt in den Chat-Bereich und ersetzt den
+vorherigen Chat-Navigationspfad.
+
+Einstellungen zeigen nur Funktionen mit angeschlossenem Produktverhalten.
+App-Sperre, Lesebestätigungen und Link-Vorschauen werden erst wieder als Controls
+angeboten, wenn persistierte Policies und ihre Laufzeitwirkung implementiert sind.
 
 ## Trust-Regeln
 

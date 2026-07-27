@@ -45,6 +45,8 @@ public final class ShadowAppState {
         do {
             if let restored = try await clientService.restoreSession() {
                 session = restored
+                pushRegistration = await clientService
+                    .currentPushRegistration()
                 session = try await clientService.startSync()
                 startSecurityObservation()
                 await refreshBridges()
@@ -70,12 +72,20 @@ public final class ShadowAppState {
         )
         defer { isBusy = false }
 
+        var createdSession = false
         do {
             session = try await clientService.signIn(request)
+            createdSession = true
+            pushRegistration = await clientService
+                .currentPushRegistration()
             session = try await clientService.startSync()
             startSecurityObservation()
             await refreshBridges()
         } catch {
+            if createdSession {
+                _ = try? await clientService.signOut(eraseLocalData: true)
+                pushRegistration = .unavailable
+            }
             present(error)
             session = ShadowSessionSnapshot(
                 state: .signedOut,
@@ -129,15 +139,23 @@ public final class ShadowAppState {
         )
         defer { isBusy = false }
 
+        var createdSession = false
         do {
             session = try await clientService.completeOAuthSignIn(
                 callbackURL: callbackURL
             )
+            createdSession = true
+            pushRegistration = await clientService
+                .currentPushRegistration()
             session = try await clientService.startSync()
             authenticationDiscovery = nil
             startSecurityObservation()
             await refreshBridges()
         } catch {
+            if createdSession {
+                _ = try? await clientService.signOut(eraseLocalData: true)
+                pushRegistration = .unavailable
+            }
             present(error)
             session = ShadowSessionSnapshot(
                 state: .signedOut,
@@ -174,17 +192,12 @@ public final class ShadowAppState {
         do {
             await clientService.stopSync()
             session = try await clientService.signOut(eraseLocalData: true)
-            bridges = []
-            activePairingSession = nil
-            securityObservationTask?.cancel()
-            verificationObservationTask?.cancel()
-            securityObservationTask = nil
-            verificationObservationTask = nil
-            security = .unknown
-            verificationUpdate = nil
-            generatedRecoveryKey = nil
-            pushRegistration = .unavailable
+            resetAuthenticatedPresentation()
         } catch {
+            session = await clientService.currentSession()
+            if session.state == .signedOut {
+                resetAuthenticatedPresentation()
+            }
             present(error)
         }
     }
@@ -387,6 +400,19 @@ public final class ShadowAppState {
         } else {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func resetAuthenticatedPresentation() {
+        bridges = []
+        activePairingSession = nil
+        securityObservationTask?.cancel()
+        verificationObservationTask?.cancel()
+        securityObservationTask = nil
+        verificationObservationTask = nil
+        security = .unknown
+        verificationUpdate = nil
+        generatedRecoveryKey = nil
+        pushRegistration = .unavailable
     }
 
     private func startSecurityObservation() {

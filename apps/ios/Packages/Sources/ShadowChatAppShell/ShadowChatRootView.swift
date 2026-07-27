@@ -8,27 +8,32 @@ public struct ShadowChatRootView: View {
     @State private var appState: ShadowAppState
 
     private let repositoryProvider: any ShadowRepositoryProvider
+    private let notificationRouter: ShadowNotificationRouter
 
     public init() {
         self.init(
             appState: ShadowAppState(),
-            repositoryProvider: DemoShadowRepositoryProvider()
+            repositoryProvider: DemoShadowRepositoryProvider(),
+            notificationRouter: .shared
         )
     }
 
     public init(appState: ShadowAppState) {
         self.init(
             appState: appState,
-            repositoryProvider: DemoShadowRepositoryProvider()
+            repositoryProvider: DemoShadowRepositoryProvider(),
+            notificationRouter: .shared
         )
     }
 
     public init(
         appState: ShadowAppState,
-        repositoryProvider: any ShadowRepositoryProvider
+        repositoryProvider: any ShadowRepositoryProvider,
+        notificationRouter: ShadowNotificationRouter = .shared
     ) {
         _appState = State(initialValue: appState)
         self.repositoryProvider = repositoryProvider
+        self.notificationRouter = notificationRouter
     }
 
     public var body: some View {
@@ -43,7 +48,8 @@ public struct ShadowChatRootView: View {
             case .active, .syncing, .offline, .locked:
                 ShadowAuthenticatedShell(
                     appState: appState,
-                    repositoryProvider: repositoryProvider
+                    repositoryProvider: repositoryProvider,
+                    notificationRouter: notificationRouter
                 )
             }
         }
@@ -71,16 +77,19 @@ private struct ShadowAuthenticatedShell: View {
     @Bindable var appState: ShadowAppState
 
     private let repositoryProvider: any ShadowRepositoryProvider
+    @Bindable private var notificationRouter: ShadowNotificationRouter
 
     @State private var selectedTab: ShadowShellTab = .chats
     @State private var chatPath = NavigationPath()
 
     init(
         appState: ShadowAppState,
-        repositoryProvider: any ShadowRepositoryProvider
+        repositoryProvider: any ShadowRepositoryProvider,
+        notificationRouter: ShadowNotificationRouter
     ) {
         self.appState = appState
         self.repositoryProvider = repositoryProvider
+        self.notificationRouter = notificationRouter
     }
 
     var body: some View {
@@ -131,6 +140,12 @@ private struct ShadowAuthenticatedShell: View {
                     chatPath = NavigationPath()
                 }
             }
+            .task {
+                openPendingNotificationRoom()
+            }
+            .onChange(of: notificationRouter.pendingRoomID) { _, _ in
+                openPendingNotificationRoom()
+            }
         }
         .sheet(
             isPresented: Binding(
@@ -162,6 +177,13 @@ private struct ShadowAuthenticatedShell: View {
         selectedTab = .chats
         chatPath = NavigationPath()
         chatPath.append(roomID)
+    }
+
+    private func openPendingNotificationRoom() {
+        guard let roomID = notificationRouter.consumePendingRoomID() else {
+            return
+        }
+        openRoom(roomID)
     }
 }
 

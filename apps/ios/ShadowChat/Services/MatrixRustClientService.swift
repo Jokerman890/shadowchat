@@ -193,29 +193,55 @@ actor MatrixRustClientService: ShadowClientService {
 
     func signOut(eraseLocalData: Bool) async throws -> ShadowSessionSnapshot {
         await stopSync()
-        try await unregisterPush()
 
-        do {
-            try await client?.logout()
-        } catch {
-            if !eraseLocalData {
+        if !eraseLocalData {
+            try await unregisterPush()
+            do {
+                try await client?.logout()
+            } catch {
                 throw mapError(error)
             }
+            client = nil
+            registeredPushIdentifiers = nil
+            resetSecurityState()
+            activeToken = nil
+            sessionSnapshot = ShadowSessionSnapshot(
+                state: .signedOut,
+                environment: .matrix
+            )
+            return sessionSnapshot
+        }
+
+        try? await unregisterPush()
+        try? await client?.logout()
+
+        let tokenToRemove = activeToken
+        var localCleanupError: (any Error)?
+        if let userID = tokenToRemove?.session.userId {
+            do {
+                try keychain.removeToken(userID: userID)
+            } catch {
+                localCleanupError = error
+            }
+        }
+        do {
+            try tokenToRemove?.directories.remove()
+        } catch {
+            localCleanupError = localCleanupError ?? error
         }
 
         client = nil
+        registeredPushIdentifiers = nil
         resetSecurityState()
-        if eraseLocalData {
-            if let userID = activeToken?.session.userId {
-                try keychain.removeToken(userID: userID)
-            }
-            try activeToken?.directories.remove()
-        }
         activeToken = nil
         sessionSnapshot = ShadowSessionSnapshot(
             state: .signedOut,
             environment: .matrix
         )
+
+        if let localCleanupError {
+            throw mapError(localCleanupError)
+        }
         return sessionSnapshot
     }
 
