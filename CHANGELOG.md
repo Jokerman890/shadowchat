@@ -21,6 +21,7 @@ Das Format orientiert sich an "Keep a Changelog"; die Produktversion folgt `MAJO
 - Native iOS-Produktshell mit Matrix-Login, Session Restore, Live-Sync, Raumliste, Timeline und Textversand.
 - iOS Security Center, Recovery-Flows, Push-Verarbeitung, Notification Service Extension und Bridge Hub.
 - Dokumentierte Branch- und Integrationsstrategie fuer den iOS-Produktbranch und die offenen Slice-Branches.
+- ADR-0016 fuer eine hybride Matrix-Laufzeit mit nativen Plattformadaptern und gemeinsamem Policy-/Contract-Core.
 
 ### Changed
 
@@ -32,6 +33,7 @@ Das Format orientiert sich an "Keep a Changelog"; die Produktversion folgt `MAJO
 - iOS 27 ist als visuelles und interaktives Designziel dokumentiert; der technische Deployment-Mindeststand bleibt davon getrennt.
 - Reichhaltige, fluessige und kontextabhaengige Uebergaenge sind mit Reduce-Motion- und Reduce-Transparency-Alternativen als Produktanforderung festgelegt.
 - Die iOS-Marketingversionen von App und Notification Service Extension sind mit `VERSION` auf `0.1.0` abgeglichen.
+- Session, Sync, Room List, Timeline, Crypto und Matrix-Persistenz sind eindeutig den Plattformadaptern zugeordnet; der Rust-Core bleibt auf plattformneutrale Regeln und Testvektoren begrenzt.
 
 ### Known Gaps
 

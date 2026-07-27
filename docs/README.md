@@ -55,6 +55,7 @@
 - `adr/ADR-0013-release-channels.md`
 - `adr/ADR-0014-matrix-ui-layer.md`
 - `adr/ADR-0015-element-x-ios-pattern-adoption.md`
+- `adr/ADR-0016-hybrid-matrix-runtime.md`
 
 ## Qualität
 - `quality/branch-integration-plan-2026-07-27.md`

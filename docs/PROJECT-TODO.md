@@ -67,12 +67,12 @@ Akzeptanz:
 Ziel: Die derzeitige Abweichung zwischen gemeinsamem Rust-Core und direktem
 iOS-MatrixRustSDK-Adapter bewusst entscheiden.
 
-- [ ] Ist-Datenfluss dokumentieren:
+- [x] Ist-Datenfluss dokumentieren:
   `SwiftUI -> Repository -> MatrixRustClientService -> MatrixRustSDK`.
-- [ ] Zieloption A bewerten: Matrix-Laufzeit dauerhaft plattformspezifisch.
-- [ ] Zieloption B bewerten: Matrix-Laufzeit im gemeinsamen Rust-Core mit FFI.
-- [ ] Zieloption C bewerten: hybrider Core mit nativen Plattform-Adaptern.
-- [ ] Kriterien vergleichen:
+- [x] Zieloption A bewerten: Matrix-Laufzeit dauerhaft plattformspezifisch.
+- [x] Zieloption B bewerten: Matrix-Laufzeit im gemeinsamen Rust-Core mit FFI.
+- [x] Zieloption C bewerten: hybrider Core mit nativen Plattform-Adaptern.
+- [x] Kriterien vergleichen:
   - Android-/iOS-Parität
   - FFI-Kopierkosten
   - Streaming und Backpressure
@@ -81,8 +81,19 @@ iOS-MatrixRustSDK-Adapter bewusst entscheiden.
   - Debugbarkeit
   - Testbarkeit
   - Crypto- und Storage-Verantwortung
-- [ ] Gewählte Option als neue ADR dokumentieren.
-- [ ] TD-0001, TD-0012, TD-0016 und TD-0018 an die Entscheidung anpassen.
+- [x] Gewählte Option als neue ADR dokumentieren.
+- [x] TD-0001, TD-0012, TD-0016 und TD-0018 an die Entscheidung anpassen.
+
+Entscheidung und Nachweis:
+
+- ADR-0016 wählt die hybride Architektur mit nativen Plattform-Matrix-Adaptern
+  und gemeinsamem Policy-/Contract-Core.
+- Session, Sync, Room List, Timeline, Crypto und Matrix-Persistenz besitzen
+  eindeutige verantwortliche Schichten.
+- iOS behält einen inkrementellen Migrationspfad; Android erhält einen
+  Adapter- und Conformance-Test-Pfad ohne UI-Neubau.
+- `cargo fmt --all --check`, `cargo test --workspace` und
+  `git diff --check` wurden am 27.07.2026 erfolgreich ausgeführt.
 
 Akzeptanz:
 

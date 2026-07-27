@@ -5,6 +5,9 @@
 Implementierter iOS-Produkt-Shell. Der App-Einstieg verwendet den in TD-0018
 beschriebenen Matrix-Live-Adapter; die lokale Laufzeit bleibt für Previews und Tests.
 
+Der Matrix-Live-Adapter ist gemäß ADR-0016 der native iOS-Plattformadapter. Er
+ist nicht die gemeinsame ShadowChat-Rust-Laufzeit.
+
 ## Ziel
 
 Der iOS-Produkt-Shell verbindet die vorhandenen Chat- und Timeline-Features mit einem testbaren Session-Lifecycle, Bridge Hub, Security Center und einer sendbaren Composer-Grenze.

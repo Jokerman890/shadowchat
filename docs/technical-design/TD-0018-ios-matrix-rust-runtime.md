@@ -11,6 +11,17 @@ Push-Registrierung und mautrix-Management-Room-Kommandos.
 Der produktive iOS-App-Einstieg verwendet MatrixRustSDK statt lokaler Demodaten,
 ohne SDK-Typen in SwiftUI oder Feature-Modellen offenzulegen.
 
+## Einordnung in die Zielarchitektur
+
+Gemäß ADR-0016 ist `MatrixRustClientService` der native iOS-Plattformadapter.
+Er verwendet intern das Rust-basierte `MatrixRustSDK`, ist aber nicht Teil des
+gemeinsamen ShadowChat-Rust-Cores.
+
+Session, Sync, Room List, Timeline, Crypto und Matrix-SDK-Store bleiben im
+iOS-Adapter. Gemeinsame Shadow-Core-Policies dürfen später nur grobgranulare,
+wertbasierte Eingaben verarbeiten; Timeline-Diffs, Room-List-Diffs und
+SDK-Handles werden nicht durch eine zusätzliche ShadowChat-FFI geleitet.
+
 ## Laufzeitkomposition
 
 `ShadowChatApp` erzeugt genau eine Instanz von `MatrixRustClientService`. Derselbe
@@ -127,6 +138,27 @@ und ein MatrixRustSDK-NSE-Client erforderlich.
 - KeychainAccess wird nur in einem `nonisolated`, thread-sicheren
   `ClientSessionDelegate` gekapselt.
 - SwiftUI importiert MatrixRustSDK nicht.
+
+## Performance- und Lifecycle-Grenzen
+
+Der aktuelle Adapter ist funktional, aber noch nicht der Performance-Zielstand:
+
+- `loadChatList()` fragt `roomInfo()` derzeit seriell pro Raum ab.
+- `loadTimeline()` mappt beim Snapshot die vollständige gespeicherte Timeline.
+- Das erste Timeline-Update wird aktuell mit einer begrenzten Polling-Schleife
+  erwartet.
+- Timeline-Kontexte bleiben bis `stopSync()` oder Logout im Actor gespeichert.
+- einzelne Front-Inserts und Front-Removes können lineare Array-Kosten
+  verursachen.
+
+P0-04 und P0-05 ersetzen diese Pfade durch inkrementelle Room-List-Daten,
+Pagination, explizite Initialisierungssignale, begrenzte Timeline-Kontexte und
+gezieltes Diff-Mapping. Gemessen werden Callback-zu-Repository-Latenz,
+Main-Actor-Zeit, Kopiermengen, Queue-Tiefe und Speicher.
+
+Adapterinterne Listener müssen bei Raum-, Session- und Accountwechsel
+deterministisch beendet werden. Eine spätere Aufteilung des Actors darf nie
+mehr als einen Client-, Sync-, Crypto- oder Store-Owner pro Account erzeugen.
 
 ## Validierung
 
