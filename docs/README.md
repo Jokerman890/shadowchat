@@ -1,5 +1,8 @@
 # ShadowChat Docs
 
+## Projektsteuerung
+- `PROJECT-TODO.md`
+
 ## Release
 - `../VERSION`
 - `../CHANGELOG.md`
@@ -54,6 +57,7 @@
 - `adr/ADR-0015-element-x-ios-pattern-adoption.md`
 
 ## Qualität
+- `quality/branch-integration-plan-2026-07-27.md`
 - `quality/security-baseline.md`
 - `quality/test-strategy.md`
 - `quality/release-definition.md`

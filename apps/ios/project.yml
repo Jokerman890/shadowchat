@@ -93,7 +93,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: de.shadowchat.ios
         PRODUCT_NAME: ShadowChat
         PRODUCT_MODULE_NAME: ShadowChat
-        MARKETING_VERSION: 1.0.0
+        MARKETING_VERSION: 0.1.0
         CURRENT_PROJECT_VERSION: 1
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Configuration/ShadowChat-Info.plist
@@ -117,7 +117,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: de.shadowchat.ios.NotificationService
         PRODUCT_NAME: ShadowChatNSE
         PRODUCT_MODULE_NAME: ShadowChatNSE
-        MARKETING_VERSION: 1.0.0
+        MARKETING_VERSION: 0.1.0
         CURRENT_PROJECT_VERSION: 1
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Configuration/ShadowChatNSE-Info.plist
