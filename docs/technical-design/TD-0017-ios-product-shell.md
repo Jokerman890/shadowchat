@@ -22,6 +22,8 @@ Enthält wertbasierte, `Sendable`-konforme Modelle und Actor-Protokolle:
 - `ShadowPairingSession`
 - `ShadowSessionService`
 - `ShadowBridgeService`
+- `ShadowSecurityService`
+- `ShadowPushService`
 - `ShadowClientService`
 
 Das Modul importiert weder SwiftUI noch MatrixRustSDK.
@@ -69,12 +71,15 @@ Room-Navigation bleibt im App-Shell, während Chat-Liste und Timeline stateless 
 
 ## Noch notwendige Produktionsarbeit
 
-Der App-Store-fähige Matrix-Live-Build benötigt nach TD-0018 weiterhin:
+Der aktuelle Slice enthält Matrix-Live-Sitzungen, OIDC/MAS, SAS-Verifikation,
+Recovery, Push-Registrierung, eine datensparsame NSE und konfigurierbare
+mautrix-Management-Room-Adapter. Vor einer App-Store-Auslieferung bleiben:
 
-- OIDC/MAS und Password-Login gemäß Server-Capabilities
-- E2EE-Verifikation und Recovery
-- Push/NSE und Share Extension
-- reale mautrix-Management-Room-Adapter
+- Apple-Team-, App-Group- und Push-Gateway-Konfiguration für den Release-Build
+- Shared-Keychain-Zugriff und Matrix-Ereignisentschlüsselung in der NSE
+- Share Extension
+- Mediennachrichten und produktive Call-Integration
+- End-to-End-QA gegen die konkret betriebenen Homeserver und mautrix-Instanzen
 
 ## Validierung
 

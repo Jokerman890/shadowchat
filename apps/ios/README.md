@@ -17,7 +17,7 @@ SwiftUI mit klarer Trennung von UI, Navigation, Services und Domain-Modellen.
 - `ShadowChat/ShadowChatApp.swift` ist der SwiftUI App Entry Point.
 - Das App-Target bindet das lokale SwiftPM-Package `Packages` ein und hostet `ShadowChatRootView` aus `ShadowChatAppShell`.
 - `ShadowCoreContracts` kapselt Session-, Bridge-, Trust- und Pairing-Typen ohne SDK-Typen in der UI.
-- Der Standard-Build startet bewusst mit `PreviewShadowClientService`; die Oberfläche kennzeichnet diese Laufzeit sichtbar und gibt sie nicht als echte Matrix-Sitzung aus.
+- Der Standard-Build injiziert `MatrixRustClientService`. `PreviewShadowClientService` wird ausschließlich von Previews und Tests verwendet.
 
 ## Enthaltener Produkt-Slice
 - Onboarding und explizite lokale Produktvorschau
@@ -25,10 +25,31 @@ SwiftUI mit klarer Trennung von UI, Navigation, Services und Domain-Modellen.
 - Chat-Liste, Room-Navigation und sendbarer Composer
 - Bridge Hub für Matrix, WhatsApp und Signal mit sichtbaren Trust-Signalen
 - Security Center und Abmelde-Flow
+- OIDC/MAS-Discovery und Passwort-Login nach Homeserver-Capabilities
+- SAS-Geräteverifikation, Recovery und Key-Backup-Status
+- APNs-Pusher und eingebettete Notification Service Extension
+- konfigurierbare mautrix-whatsapp- und mautrix-signal-Management-Room-Adapter
 - WhatsApp-inspirierte grüne Akzente, OLED Dark Mode und iOS-Material
 
 ## Matrix-Live-Adapter
-`project.yml` pinnt `MatrixRustSDK`, `KeychainAccess` und `SwiftCrypto`. Der produktive Adapter muss `ShadowClientService` implementieren und wird danach am App-Einstieg injiziert. Bis dieser Adapter inklusive sicherer Session-Persistenz, Sync und Crypto-Tests vorliegt, bleibt die Laufzeit explizit auf lokale Vorschau begrenzt.
+`project.yml` pinnt `MatrixRustSDK`, `KeychainAccess` und `SwiftCrypto`. Der
+produktive Actor implementiert `ShadowClientService`, persistiert Restoration
+Tokens und Store-Passphrasen ausschließlich in der Keychain und hält SDK-Typen
+aus UI- und Feature-Modulen heraus.
+
+## Release-Konfiguration
+
+Die folgenden Xcode-Build-Settings sind absichtlich leer und müssen je Umgebung
+gesetzt werden:
+
+- `SHADOW_PUSH_GATEWAY_URL`: vollständige HTTPS-URL des Matrix/Sygnal
+  `/_matrix/push/v1/notify`-Endpoints
+- `SHADOW_WHATSAPP_MANAGEMENT_ROOM_ID`: Room-ID des mautrix-whatsapp-Bots
+- `SHADOW_SIGNAL_MANAGEMENT_ROOM_ID`: Room-ID des mautrix-signal-Bots
+
+Für Gerätebuilds müssen außerdem `DEVELOPMENT_TEAM`, die App Group
+`group.de.shadowchat.ios` und die Push-Capability im Apple Developer Account
+provisioniert sein.
 
 ## Build und Tests
 Auf macOS mit Xcode:

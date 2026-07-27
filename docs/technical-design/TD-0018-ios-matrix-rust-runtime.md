@@ -2,9 +2,9 @@
 
 ## Status
 
-Implementiert für Passwort-Login, sichere Sitzungswiederherstellung, Sliding-Sync,
-Raumliste, Text-Timeline und Textversand. OIDC/MAS, Geräteverifikation, Push und
-mautrix-Management bleiben getrennte Folgeslices.
+Implementiert für OIDC/MAS- und Passwort-Login, sichere Sitzungswiederherstellung,
+Sliding-Sync, Raumliste, Text-Timeline, Textversand, Geräteverifikation, Recovery,
+Push-Registrierung und mautrix-Management-Room-Kommandos.
 
 ## Ziel
 
@@ -42,12 +42,15 @@ Keychain-Eintrag.
 
 ## Authentifizierung
 
-Der aktuelle Slice unterstützt HTTPS-Homeserver und Matrix-Passwort-Login.
-Fehler werden an der Adaptergrenze in `ShadowServiceError` übersetzt.
+Der Adapter entdeckt die vom Homeserver veröffentlichten Login-Fähigkeiten.
+OIDC/MAS wird bevorzugt und über `ASWebAuthenticationSession` ausgeführt. Der
+MatrixRustSDK-Client erzeugt die Authorization-URL und verarbeitet den Callback.
+Passwortfelder erscheinen nur, wenn der Homeserver Passwort-Login unterstützt.
 
-OIDC/MAS ist laut ADR-0004 der bevorzugte Produktionspfad. Der noch folgende
-OIDC-Slice muss Server-Capabilities entdecken und den Browser-Callback verarbeiten;
-er darf das Passwort nicht als universell verfügbaren Fallback darstellen.
+OAuth-Zwischenzustände enthalten eigene Store-Verzeichnisse und werden bei Abbruch
+einschließlich ihrer lokalen Daten verworfen. Erst nach erfolgreichem Callback
+werden Client, Restoration Token und Store als aktive Sitzung übernommen. Fehler
+werden an der Adaptergrenze in `ShadowServiceError` übersetzt.
 
 ## Sync und Features
 
@@ -71,10 +74,56 @@ Matrix wird aus der aktiven Sitzung abgeleitet. WhatsApp und Signal werden als
 `unavailable` ausgegeben, solange kein mautrix-Management-Adapter konfiguriert ist.
 Die UI bietet in diesem Zustand keine wirkungslose Pairing-Aktion an.
 
+Die Build-Settings `SHADOW_WHATSAPP_MANAGEMENT_ROOM_ID` und
+`SHADOW_SIGNAL_MANAGEMENT_ROOM_ID` aktivieren die jeweiligen Adapter. ShadowChat
+sendet ausschließlich dokumentierte Management-Kommandos:
+
+- mautrix-whatsapp: `login qr`, `cancel`, `logout`
+- mautrix-signal: `login`, `cancel`, `logout`
+
+QR-Bilder werden als Matrix-Medien geladen. Ein Adapter meldet erst dann
+`connected`, wenn der Bridge-Bot eine erfolgreiche Login-Antwort geliefert hat.
+Bridge-Räume behalten immer den Trust-Hinweis für externen Transport. Die
+Aufzählung von Ghost-/Puppet-Konten ist noch nicht durch einen stabilen
+mautrix-Managementvertrag gedeckt und liefert deshalb keine erfundenen Kontakte.
+
+## Verschlüsselungssicherheit
+
+`ShadowSecurityService` bildet MatrixRustSDK-Zustände auf SDK-freie,
+`Sendable`-Modelle für Gerätevertrauen, Recovery und Key Backup ab. Listener
+wechseln aus beliebigen SDK-Threads zurück in den Service-Actor.
+
+Die Geräteverifikation verwendet den SDK-`SessionVerificationController`.
+SwiftUI erhält ausschließlich Emoji-Beschreibungen und Zustandsereignisse.
+Bestätigung, Ablehnung und Abbruch laufen wieder actor-isoliert über den SDK-
+Controller.
+
+Recovery erzeugt beziehungsweise rotiert den Matrix-Wiederherstellungsschlüssel
+mit `enableRecovery` und importiert einen vorhandenen Schlüssel mit
+`recoverAndFixBackup`. Der neu erzeugte Schlüssel bleibt nur im Main-Actor-
+UI-State, bis der Benutzer seine Sicherung bestätigt; er wird nicht in
+UserDefaults oder Logausgaben geschrieben.
+
+## Push und Notification Service Extension
+
+APNs-Berechtigung und Token-Empfang sind Main-Actor-gebunden. Der Service
+registriert den Base64-APNs-Token als `event_id_only` HTTP-Pusher über
+`Client.setPusher`. `SHADOW_PUSH_GATEWAY_URL` muss im Release-Build die vollständige
+HTTPS-Notify-Endpoint-URL enthalten. Ohne Wert bleibt Push bewusst deaktiviert.
+
+`ShadowChatNSE` ist ein eigenes Swift-6-App-Extension-Target. Der aktuelle Slice
+ersetzt Serverinhalt durch „Neue verschlüsselte Nachricht“, übernimmt nur Room-
+und Event-ID für den Open-Flow und liefert beim Zeitlimit den Original-Fallback
+genau einmal aus. Er behauptet keine Ereignisentschlüsselung. Dafür sind vor
+Release ein echtes Apple Development Team, der gemeinsame Keychain Access Group
+und ein MatrixRustSDK-NSE-Client erforderlich.
+
 ## Concurrency
 
 - `MatrixRustClientService` ist ein Actor.
 - Listener liefern `Sendable` Timeline-Diffs in den Actor.
+- Crypto-Listener und Verification-Delegates reichen nur `Sendable`
+  ShadowChat-Werte in den Actor.
 - KeychainAccess wird nur in einem `nonisolated`, thread-sicheren
   `ClientSessionDelegate` gekapselt.
 - SwiftUI importiert MatrixRustSDK nicht.
@@ -93,3 +142,9 @@ Zusätzlich:
 - App-Neustart mit Session-Restoration
 - Empfang und Versand in verschlüsseltem Testraum
 - Logout entfernt Keychain-Token und Matrix-Store
+- OIDC-Callback und abgebrochener OIDC-Flow
+- SAS-Verifikation mit übereinstimmenden und abweichenden Emojis
+- Recovery-Key-Erzeugung, Rotation und Wiederherstellung
+- APNs-Pusher gegen das konfigurierte Sygnal-Gateway
+- NSE-Zeitlimit und Payloads mit fehlender Room-/Event-ID
+- WhatsApp- und Signal-Login gegen die konkrete mautrix-Konfiguration
