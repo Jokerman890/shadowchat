@@ -1,3 +1,4 @@
+import Foundation
 import ShadowDesignSystem
 import SwiftUI
 
@@ -5,13 +6,22 @@ public struct RoomTimelineView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let state: RoomTimelineState
+    private let draft: String
+    private let isSending: Bool
+    private let sendErrorMessage: String?
     private let send: (RoomTimelineEvent) -> Void
 
     public init(
         state: RoomTimelineState,
+        draft: String = "",
+        isSending: Bool = false,
+        sendErrorMessage: String? = nil,
         send: @escaping (RoomTimelineEvent) -> Void
     ) {
         self.state = state
+        self.draft = draft
+        self.isSending = isSending
+        self.sendErrorMessage = sendErrorMessage
         self.send = send
     }
 
@@ -46,15 +56,16 @@ public struct RoomTimelineView: View {
                         .font(.title2.weight(.bold))
                         .foregroundStyle(ShadowColors.deepText)
                         .lineLimit(1)
-                    Text("Timeline shell")
+                    Label("Ende-zu-Ende verschlüsselt", systemImage: "lock.fill")
                         .font(.subheadline)
                         .foregroundStyle(ShadowColors.softText)
                 }
 
                 Spacer()
 
-                HeaderAction(systemName: "phone.fill", label: "Call")
-                HeaderAction(systemName: "video.fill", label: "Video")
+                Image(systemName: "checkmark.shield.fill")
+                    .foregroundStyle(ShadowColors.whatsAppGreen)
+                    .accessibilityLabel("Verifizierter verschlüsselter Raum")
             }
             .padding(ShadowSpacing.md)
         }
@@ -105,7 +116,20 @@ public struct RoomTimelineView: View {
                     send(.refreshRequested)
                 }
 
-                TimelineComposer()
+                if let sendErrorMessage {
+                    Label(sendErrorMessage, systemImage: "exclamationmark.triangle.fill")
+                        .font(.footnote)
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, ShadowSpacing.lg)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                TimelineComposer(
+                    draft: draft,
+                    isSending: isSending,
+                    draftChanged: { send(.draftChanged($0)) },
+                    sendRequested: { send(.sendRequested) }
+                )
             }
         case .empty:
             Spacer()
@@ -143,31 +167,38 @@ public struct RoomTimelineView: View {
     }
 }
 
-private struct HeaderAction: View {
-    let systemName: String
-    let label: String
-
-    var body: some View {
-        Image(systemName: systemName)
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(ShadowColors.unreadBadge)
-            .frame(width: 38, height: 38)
-            .background(.ultraThinMaterial, in: Circle())
-            .overlay(Circle().stroke(.white.opacity(0.55), lineWidth: 0.8))
-            .accessibilityLabel(label)
-    }
-}
-
 private struct TimelineComposer: View {
+    let draft: String
+    let isSending: Bool
+    let draftChanged: (String) -> Void
+    let sendRequested: () -> Void
+
     var body: some View {
         ShadowGlassPanel {
             HStack(spacing: ShadowSpacing.sm) {
-                ComposerIcon(systemName: "plus", label: "Attach")
-                Text("Message shell")
-                    .foregroundStyle(ShadowColors.softText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                ComposerIcon(systemName: "mic.fill", label: "Voice")
-                ComposerIcon(systemName: "paperplane.fill", label: "Send", emphasized: true)
+                TextField(
+                    "Nachricht",
+                    text: Binding(
+                        get: { draft },
+                        set: draftChanged
+                    ),
+                    axis: .vertical
+                )
+                .lineLimit(1...5)
+                .submitLabel(.send)
+                .onSubmit(sendRequested)
+                Button(action: sendRequested) {
+                    if isSending {
+                        ProgressView()
+                            .tint(.black)
+                            .frame(width: 42, height: 42)
+                            .background(shadowAccentGradient, in: Circle())
+                    } else {
+                        ComposerIcon(systemName: "paperplane.fill", label: "Send", emphasized: true)
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
             }
             .padding(.horizontal, ShadowSpacing.md)
             .padding(.vertical, ShadowSpacing.sm)

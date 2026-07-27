@@ -10,6 +10,9 @@ public struct RoomTimelineRoute: View {
     public var body: some View {
         RoomTimelineView(
             state: viewModel.state,
+            draft: viewModel.draft,
+            isSending: viewModel.isSending,
+            sendErrorMessage: viewModel.sendErrorMessage,
             send: viewModel.send
         )
     }

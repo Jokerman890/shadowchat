@@ -33,6 +33,7 @@
 - `technical-design/TD-0014-rust-matrix-runtime-skeleton.md`
 - `technical-design/TD-0015-ffi-dto-surface.md`
 - `technical-design/TD-0016-mobile-repository-swap-boundary.md`
+- `technical-design/TD-0017-ios-product-shell.md`
 
 ## Architekturentscheidungen
 - `adr/ADR-0001-monorepo.md`
@@ -49,6 +50,7 @@
 - `adr/ADR-0012-feature-modules.md`
 - `adr/ADR-0013-release-channels.md`
 - `adr/ADR-0014-matrix-ui-layer.md`
+- `adr/ADR-0015-element-x-ios-pattern-adoption.md`
 
 ## Qualität
 - `quality/security-baseline.md`

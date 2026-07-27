@@ -1,0 +1,103 @@
+name: ShadowChat
+
+options:
+  minimumXcodeGenVersion: 2.37.0
+  xcodeVersion: "16.0"
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+configs:
+  Debug: debug
+  Release: release
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+    SUPPORTS_MACCATALYST: NO
+    CLANG_ENABLE_OBJC_ARC: YES
+    CLANG_ENABLE_MODULES: YES
+    CLANG_ENABLE_OBJC_WEAK: YES
+    SWIFT_ENABLE_EXPLICIT_MODULES: YES
+    ENABLE_PREVIEWS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+  configs:
+    Debug:
+      SWIFT_COMPILATION_MODE: incremental
+      SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+      DEBUG_INFORMATION_FORMAT: dwarf
+      ENABLE_TESTABILITY: YES
+      ONLY_ACTIVE_ARCH: YES
+    Release:
+      SWIFT_COMPILATION_MODE: wholemodule
+      SWIFT_OPTIMIZATION_LEVEL: "-O"
+      DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
+      ENABLE_NS_ASSERTIONS: NO
+      VALIDATE_PRODUCT: YES
+
+packages:
+  ShadowChatMobile:
+    path: Packages
+  MatrixRustSDK:
+    url: https://github.com/element-hq/matrix-rust-components-swift
+    exactVersion: 26.07.23
+  KeychainAccess:
+    url: https://github.com/kishikawakatsumi/KeychainAccess
+    minorVersion: 4.2.2
+  SwiftCrypto:
+    url: https://github.com/apple/swift-crypto
+    from: 4.0.0
+  SwiftLint:
+    url: https://github.com/SimplyDanny/SwiftLintPlugins
+    from: 0.59.1
+
+targets:
+  ShadowChat:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: ShadowChat
+        group: App
+    dependencies:
+      - package: ShadowChatMobile
+        product: ShadowChatAppShell
+      - package: MatrixRustSDK
+        product: MatrixRustSDK
+      - package: KeychainAccess
+        product: KeychainAccess
+      - package: SwiftCrypto
+        product: Crypto
+    buildToolPlugins:
+      - plugin: SwiftLintBuildToolPlugin
+        package: SwiftLint
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.shadowchat.ios
+        PRODUCT_NAME: ShadowChat
+        PRODUCT_MODULE_NAME: ShadowChat
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: ShadowChat
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.social-networking
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIRequiresFullScreen: NO
+        INFOPLIST_KEY_NSCameraUsageDescription: ShadowChat verwendet die Kamera zum Scannen von QR-Codes und zum Aufnehmen von Medien.
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: ShadowChat verwendet das Mikrofon für Sprachnachrichten und Anrufe.
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: ShadowChat benötigt Zugriff auf deine Mediathek, damit du Medien senden kannst.
+        INFOPLIST_KEY_NSFaceIDUsageDescription: ShadowChat verwendet Face ID zum Schutz deiner lokalen Sitzung.
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+    scheme:
+      gatherCoverageData: true

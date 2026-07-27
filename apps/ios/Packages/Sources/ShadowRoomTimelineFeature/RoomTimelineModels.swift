@@ -67,4 +67,6 @@ public enum RoomTimelineEvent: Equatable, Sendable {
     case appeared
     case refreshRequested
     case retryRequested
+    case draftChanged(String)
+    case sendRequested
 }

@@ -93,6 +93,73 @@ final class RoomTimelineViewModelTests: XCTestCase {
             .loaded(roomTitle: "Recovered Room", items: [item])
         )
     }
+
+    func testSendAppendsMessageAndClearsDraft() async {
+        let viewModel = RoomTimelineViewModel(
+            roomId: "room-send",
+            repository: SendingRoomTimelineRepository()
+        )
+        await viewModel.load()
+        viewModel.send(.draftChanged("Hello ShadowChat"))
+
+        await viewModel.sendDraft()
+
+        guard case let .loaded(_, items) = viewModel.state else {
+            return XCTFail("Expected a loaded timeline")
+        }
+        XCTAssertEqual(items.last?.body, "Hello ShadowChat")
+        XCTAssertEqual(items.last?.deliveryState, .sent)
+        XCTAssertEqual(viewModel.draft, "")
+        XCTAssertNil(viewModel.sendErrorMessage)
+    }
+
+    func testUnavailableSendPreservesDraftAndPublishesError() async {
+        let viewModel = RoomTimelineViewModel(
+            roomId: "room-no-send",
+            repository: StubRoomTimelineRepository(
+                result: .success(
+                    RoomTimelineSnapshotViewState(
+                        roomId: "room-no-send",
+                        roomTitle: "Read only",
+                        items: [
+                            RoomTimelineItemViewState(
+                                messageId: "existing",
+                                senderDisplayName: "Ari",
+                                body: "Existing",
+                                sentAtLabel: "10:00",
+                                direction: .incoming,
+                                deliveryState: .read
+                            )
+                        ]
+                    )
+                )
+            )
+        )
+        await viewModel.load()
+        viewModel.send(.draftChanged("Keep me"))
+
+        await viewModel.sendDraft()
+
+        XCTAssertEqual(viewModel.draft, "Keep me")
+        XCTAssertNotNil(viewModel.sendErrorMessage)
+    }
+
+    func testSendCreatesFirstMessageInEmptyRoom() async {
+        let viewModel = RoomTimelineViewModel(
+            roomId: "empty-room",
+            repository: EmptySendingRoomTimelineRepository()
+        )
+        await viewModel.load()
+        viewModel.send(.draftChanged("First message"))
+
+        await viewModel.sendDraft()
+
+        guard case let .loaded(roomTitle, items) = viewModel.state else {
+            return XCTFail("Expected the empty room to become loaded")
+        }
+        XCTAssertEqual(roomTitle, "Empty room")
+        XCTAssertEqual(items.map(\.body), ["First message"])
+    }
 }
 
 private struct StubRoomTimelineRepository: RoomTimelineRepository {
@@ -119,3 +186,54 @@ private final class SequencedRoomTimelineRepository: RoomTimelineRepository, @un
 }
 
 private struct TestError: Error {}
+
+private struct SendingRoomTimelineRepository: RoomTimelineRepository {
+    func loadTimeline(roomId: String) async throws -> RoomTimelineSnapshotViewState {
+        RoomTimelineSnapshotViewState(
+            roomId: roomId,
+            roomTitle: "Send Test",
+            items: [
+                RoomTimelineItemViewState(
+                    messageId: "existing-message",
+                    senderDisplayName: "Ari",
+                    body: "Ready",
+                    sentAtLabel: "Earlier",
+                    direction: .incoming,
+                    deliveryState: .read
+                )
+            ]
+        )
+    }
+
+    func sendMessage(roomId: String, body: String) async throws -> RoomTimelineItemViewState {
+        RoomTimelineItemViewState(
+            messageId: "sent-message",
+            senderDisplayName: nil,
+            body: body,
+            sentAtLabel: "Now",
+            direction: .outgoing,
+            deliveryState: .sent
+        )
+    }
+}
+
+private struct EmptySendingRoomTimelineRepository: RoomTimelineRepository {
+    func loadTimeline(roomId: String) async throws -> RoomTimelineSnapshotViewState {
+        RoomTimelineSnapshotViewState(
+            roomId: roomId,
+            roomTitle: "Empty room",
+            items: []
+        )
+    }
+
+    func sendMessage(roomId: String, body: String) async throws -> RoomTimelineItemViewState {
+        RoomTimelineItemViewState(
+            messageId: "first-message",
+            senderDisplayName: nil,
+            body: body,
+            sentAtLabel: "Now",
+            direction: .outgoing,
+            deliveryState: .sent
+        )
+    }
+}
