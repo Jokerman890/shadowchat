@@ -96,7 +96,7 @@ sein. Ohne passende dSYMs gilt er nicht als belastbare Baseline.
 
 ## XCTest-Zuordnung
 
-Die noch anzulegenden Performancefälle verwenden:
+Die geplante XCTest-Zuordnung lautet:
 
 - `XCTApplicationLaunchMetric` für Cold Start
 - `XCTOSSignpostMetric` für die fünf benannten Signpost-Intervalle
@@ -104,8 +104,30 @@ Die noch anzulegenden Performancefälle verwenden:
 - `XCTMemoryMetric` für die definierte 20-Räume-Sequenz
 - `XCTClockMetric` nur für isolierte Mapping- und Diff-Fixtures
 
-Die Tests werden erst zu CI-Gates, wenn die Fixtures 100, 1.000 und 10.000
-Elemente reproduzierbar erzeugen und mehrere Geräte-Baselines stabil sind.
+Für Timeline-Mapping und Timeline-Diff-Bursts existieren deterministische
+XCTest-Fälle mit 100, 1.000 und 10.000 Elementen. Jeder Fall erfasst zehn
+Wiederholungen mit `XCTClockMetric`; XCTest führt davor einen nicht gewerteten
+Warm-up-Lauf aus. Der gemessene Code ist derselbe generische Projektions- und
+Array-Mutationspfad, den der Matrix-Adapter nutzt. Der Projektionspfad umfasst
+Identifier-Konvertierung, Zeitstempelkonvertierung, lokalisierte
+Zeitformatierung und Delivery-State-Mapping. Nur die SDK-spezifische
+Event-Extraktion bleibt an der Adaptergrenze.
+
+Auf macOS:
+
+```bash
+cd apps/ios/Packages
+xcodebuild test \
+  -scheme ShadowChatMobile \
+  -destination "platform=iOS Simulator,name=<iPhone Simulator>" \
+  -only-testing:ShadowRoomTimelineFeatureTests/RoomTimelinePerformanceTests
+```
+
+Simulatorergebnisse dienen zunächst nur als vergleichbare
+Entwicklungscharakterisierung und werden nicht als physische
+Geräte-Runtime-Baseline ausgegeben. Die Tests werden erst zu CI-Gates, wenn
+auch die Raumlisten-Fixtures vollständig sind und mehrere Geräte-Baselines
+stabil vorliegen.
 
 ## Bekannte Hotspots
 

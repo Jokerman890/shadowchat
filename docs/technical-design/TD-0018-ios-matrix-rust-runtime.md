@@ -200,6 +200,14 @@ keine Account-, Raum- oder Nachrichteninhalte. Runtime-Baselines werden
 ausschließlich mit Release-Builds auf physischen Referenzgeräten erstellt;
 Debug- und Simulatorwerte bleiben Korrektheitsdiagnostik.
 
+Die generische Projektion und die Array-Mutationen für Timeline-Diffs liegen in
+`ShadowRoomTimelineFeature` und werden vom Matrix-Adapter produktiv verwendet.
+Dadurch können XCTest-Performancefälle denselben Code mit 100, 1.000 und
+10.000 app-eigenen Timeline-Modellen messen, ohne MatrixRustSDK-Typen in
+Test-Fixtures oder UI-Schichten zu veröffentlichen. Die Tests erfassen
+Charakterisierungswerte ohne CI-Schwellen; die strukturellen Kosten von
+Front-Inserts und vollständigen Snapshots bleiben Gegenstand von P0-05.
+
 Adapterinterne Listener müssen bei Raum-, Session- und Accountwechsel
 deterministisch beendet werden. Eine spätere Aufteilung des Actors darf nie
 mehr als einen Client-, Sync-, Crypto- oder Store-Owner pro Account erzeugen.
