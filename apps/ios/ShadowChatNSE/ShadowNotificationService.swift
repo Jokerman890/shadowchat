@@ -23,6 +23,7 @@ final nonisolated class ShadowNotificationService:
             fallback: request.content,
             handler: contentHandler
         )
+        let processor = processor
         Task {
             await processor.process(request)
         }
