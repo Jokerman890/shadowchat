@@ -16,8 +16,7 @@ actor MatrixRustClientService: ShadowClientService {
     var verificationController: SessionVerificationController?
     var verificationDelegate: MatrixSessionVerificationDelegate?
     var verificationStateListener: TaskHandle?
-    var recoveryStateListener: TaskHandle?
-    var backupStateListener: TaskHandle?
+    var recoveryStateListener, backupStateListener: TaskHandle?
     var securityContinuations: [
         UUID: AsyncStream<ShadowSecuritySnapshot>.Continuation
     ] = [:]

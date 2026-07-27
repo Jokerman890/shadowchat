@@ -115,8 +115,7 @@ extension MatrixRustClientService {
         let effectivePassphrase = normalizedPassphrase?.isEmpty == false
             ? normalizedPassphrase
             : nil
-        let progressListener = MatrixEncryptionListener<EnableRecoveryProgress> {
-            [weak self] progress in
+        let progressListener = MatrixEncryptionListener<EnableRecoveryProgress> { [weak self] progress in
             Task {
                 await self?.receiveRecoveryProgress(progress)
             }
@@ -128,8 +127,8 @@ extension MatrixRustClientService {
                 passphrase: effectivePassphrase,
                 progressListener: progressListener
             )
-            updateRecovery(.enabled)
-            updateKeyBackup(.enabled)
+            updateRecovery(ShadowRecoveryState.enabled)
+            updateKeyBackup(ShadowKeyBackupState.enabled)
             return recoveryKey
         } catch {
             throw mapError(error)
@@ -153,8 +152,8 @@ extension MatrixRustClientService {
             try await client.encryption().recoverAndFixBackup(
                 recoveryKey: normalizedKey
             )
-            updateRecovery(.enabled)
-            updateKeyBackup(.enabled)
+            updateRecovery(ShadowRecoveryState.enabled)
+            updateKeyBackup(ShadowKeyBackupState.enabled)
             return securitySnapshotValue
         } catch {
             throw ShadowServiceError.cryptoUnavailable
@@ -181,24 +180,21 @@ extension MatrixRustClientService {
 
         let encryption = client.encryption()
         verificationStateListener = encryption.verificationStateListener(
-            listener: MatrixEncryptionListener<VerificationState> {
-                [weak self] state in
+            listener: MatrixEncryptionListener<VerificationState> { [weak self] state in
                 Task {
                     await self?.updateDeviceTrust(state)
                 }
             }
         )
         recoveryStateListener = encryption.recoveryStateListener(
-            listener: MatrixEncryptionListener<RecoveryState> {
-                [weak self] state in
+            listener: MatrixEncryptionListener<RecoveryState> { [weak self] state in
                 Task {
                     await self?.updateRecovery(state)
                 }
             }
         )
         backupStateListener = encryption.backupStateListener(
-            listener: MatrixEncryptionListener<BackupState> {
-                [weak self] state in
+            listener: MatrixEncryptionListener<BackupState> { [weak self] state in
                 Task {
                     await self?.updateKeyBackup(state)
                 }
@@ -272,11 +268,11 @@ extension MatrixRustClientService {
     private func receiveRecoveryProgress(_ progress: EnableRecoveryProgress) {
         switch progress {
         case .starting, .creatingBackup, .creatingRecoveryKey, .backingUp:
-            updateRecovery(.settingUp)
+            updateRecovery(ShadowRecoveryState.settingUp)
         case .done:
-            updateRecovery(.enabled)
+            updateRecovery(ShadowRecoveryState.enabled)
         case .roomKeyUploadError:
-            updateKeyBackup(.unknown)
+            updateKeyBackup(ShadowKeyBackupState.unknown)
         }
     }
 
@@ -328,98 +324,5 @@ extension MatrixRustClientService {
 
     private func removeVerificationContinuation(_ identifier: UUID) {
         verificationContinuations[identifier] = nil
-    }
-}
-
-final nonisolated class MatrixEncryptionListener<Value: Sendable>:
-    @unchecked Sendable {
-    private let receive: @Sendable (Value) -> Void
-
-    init(receive: @escaping @Sendable (Value) -> Void) {
-        self.receive = receive
-    }
-
-    func send(_ value: Value) {
-        receive(value)
-    }
-}
-
-extension MatrixEncryptionListener: VerificationStateListener
-    where Value == VerificationState {
-    func onUpdate(status: VerificationState) {
-        send(status)
-    }
-}
-
-extension MatrixEncryptionListener: RecoveryStateListener
-    where Value == RecoveryState {
-    func onUpdate(status: RecoveryState) {
-        send(status)
-    }
-}
-
-extension MatrixEncryptionListener: BackupStateListener
-    where Value == BackupState {
-    func onUpdate(status: BackupState) {
-        send(status)
-    }
-}
-
-extension MatrixEncryptionListener: EnableRecoveryProgressListener
-    where Value == EnableRecoveryProgress {
-    func onUpdate(status: EnableRecoveryProgress) {
-        send(status)
-    }
-}
-
-final nonisolated class MatrixSessionVerificationDelegate:
-    SessionVerificationControllerDelegate,
-    @unchecked Sendable {
-    private let receive: @Sendable (ShadowDeviceVerificationUpdate) -> Void
-
-    init(
-        receive: @escaping @Sendable (ShadowDeviceVerificationUpdate) -> Void
-    ) {
-        self.receive = receive
-    }
-
-    func didReceiveVerificationRequest(
-        details: MatrixRustSDK.SessionVerificationRequestDetails
-    ) {
-        receive(.requested)
-    }
-
-    func didReceiveVerificationData(data: SessionVerificationData) {
-        guard case .emojis(let emojis, _) = data else { return }
-        receive(
-            .comparing(
-                emojis.map {
-                    ShadowVerificationEmoji(
-                        symbol: $0.symbol(),
-                        description: $0.description()
-                    )
-                }
-            )
-        )
-    }
-
-    func didAcceptVerificationRequest() {
-        receive(.accepted)
-    }
-
-    func didStartSasVerification() {
-        // Emoji data is the next user-visible transition.
-    }
-
-    func didFail() {
-        receive(.failed)
-    }
-
-    func didCancel() {
-        receive(.cancelled)
-    }
-
-    func didFinish() {
-        receive(.verified)
     }
 }
