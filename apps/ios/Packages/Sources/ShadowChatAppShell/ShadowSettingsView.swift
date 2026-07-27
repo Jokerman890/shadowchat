@@ -54,6 +54,31 @@ struct ShadowSettingsView: View {
                         }
                     }
 
+                    Section("Mitteilungen") {
+                        LabeledContent(
+                            "Push",
+                            value: appState.pushRegistration.state.title
+                        )
+
+                        if appState.pushRegistration.state == .registered {
+                            Button(
+                                "Push-Verbindung entfernen",
+                                role: .destructive
+                            ) {
+                                Task {
+                                    await appState.disablePushNotifications()
+                                }
+                            }
+                        } else {
+                            Button("Mitteilungen aktivieren") {
+                                Task {
+                                    await appState.enablePushNotifications()
+                                }
+                            }
+                            .disabled(appState.isBusy)
+                        }
+                    }
+
                     Section {
                         Button("Abmelden", role: .destructive) {
                             Task { await appState.signOut() }
@@ -66,6 +91,23 @@ struct ShadowSettingsView: View {
             .sheet(isPresented: $presentsSecurityCenter) {
                 ShadowSecurityCenterView(appState: appState)
             }
+        }
+    }
+}
+
+private extension ShadowPushRegistrationState {
+    var title: String {
+        switch self {
+        case .unavailable:
+            "Nicht eingerichtet"
+        case .registering:
+            "Wird registriert"
+        case .registered:
+            "Aktiv"
+        case .denied:
+            "Nicht erlaubt"
+        case .failed:
+            "Fehlgeschlagen"
         }
     }
 }

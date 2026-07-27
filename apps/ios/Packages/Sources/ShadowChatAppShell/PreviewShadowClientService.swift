@@ -97,6 +97,15 @@ actor PreviewShadowClientService: ShadowClientService {
         throw ShadowServiceError.unsupportedOperation
     }
 
+    func registerPush(
+        deviceToken: Data,
+        gatewayURL: URL
+    ) async throws -> ShadowPushRegistration {
+        throw ShadowServiceError.unsupportedOperation
+    }
+
+    func unregisterPush() async {}
+
     func restoreSession() async throws -> ShadowSessionSnapshot? {
         nil
     }

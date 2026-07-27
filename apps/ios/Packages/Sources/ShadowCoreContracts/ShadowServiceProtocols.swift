@@ -49,7 +49,16 @@ public protocol ShadowSecurityService: Actor {
     func recoverEncryption(recoveryKey: String) async throws -> ShadowSecuritySnapshot
 }
 
+public protocol ShadowPushService: Actor {
+    func registerPush(
+        deviceToken: Data,
+        gatewayURL: URL
+    ) async throws -> ShadowPushRegistration
+    func unregisterPush() async
+}
+
 public protocol ShadowClientService:
     ShadowSessionService,
     ShadowBridgeService,
-    ShadowSecurityService {}
+    ShadowSecurityService,
+    ShadowPushService {}

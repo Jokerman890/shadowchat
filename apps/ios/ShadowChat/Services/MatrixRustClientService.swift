@@ -15,6 +15,7 @@ actor MatrixRustClientService: ShadowClientService {
     var securitySnapshotValue = ShadowSecuritySnapshot.unknown
     var verificationController: SessionVerificationController?
     var verificationDelegate: MatrixSessionVerificationDelegate?
+    var registeredPushIdentifiers: PusherIdentifiers?
     var verificationStateListener: TaskHandle?
     var recoveryStateListener, backupStateListener: TaskHandle?
     var securityContinuations: [
@@ -189,6 +190,7 @@ actor MatrixRustClientService: ShadowClientService {
 
     func signOut(eraseLocalData: Bool) async throws -> ShadowSessionSnapshot {
         await stopSync()
+        await unregisterPush()
 
         do {
             try await client?.logout()

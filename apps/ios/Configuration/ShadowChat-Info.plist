@@ -35,6 +35,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.social-networking</string>
+	<key>ShadowPushGatewayURL</key>
+	<string>$(SHADOW_PUSH_GATEWAY_URL)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>ShadowChat verwendet die Kamera zum Scannen von QR-Codes und zum Aufnehmen von Medien.</string>
 	<key>NSFaceIDUsageDescription</key>

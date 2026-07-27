@@ -13,6 +13,7 @@ public final class ShadowAppState {
     public private(set) var security: ShadowSecuritySnapshot
     public private(set) var verificationUpdate: ShadowDeviceVerificationUpdate?
     public private(set) var generatedRecoveryKey: String?
+    public private(set) var pushRegistration: ShadowPushRegistration
     public private(set) var isBusy: Bool
     public private(set) var errorMessage: String?
 
@@ -28,6 +29,7 @@ public final class ShadowAppState {
         )
         bridges = []
         security = .unknown
+        pushRegistration = .unavailable
         isBusy = false
     }
 
@@ -181,6 +183,7 @@ public final class ShadowAppState {
             security = .unknown
             verificationUpdate = nil
             generatedRecoveryKey = nil
+            pushRegistration = .unavailable
         } catch {
             present(error)
         }
@@ -337,6 +340,37 @@ public final class ShadowAppState {
         generatedRecoveryKey = nil
     }
 
+    public func enablePushNotifications() async {
+        guard !isBusy else { return }
+        isBusy = true
+        errorMessage = nil
+        pushRegistration = ShadowPushRegistration(state: .registering)
+        defer { isBusy = false }
+
+        do {
+            guard let gatewayURL = configuredPushGatewayURL else {
+                throw ShadowServiceError.pushConfigurationMissing
+            }
+            let deviceToken = try await ShadowPushTokenBroker.shared
+                .requestDeviceToken()
+            pushRegistration = try await clientService.registerPush(
+                deviceToken: deviceToken,
+                gatewayURL: gatewayURL
+            )
+        } catch ShadowServiceError.notificationPermissionDenied {
+            pushRegistration = ShadowPushRegistration(state: .denied)
+            present(ShadowServiceError.notificationPermissionDenied)
+        } catch {
+            pushRegistration = ShadowPushRegistration(state: .failed)
+            present(error)
+        }
+    }
+
+    public func disablePushNotifications() async {
+        await clientService.unregisterPush()
+        pushRegistration = .unavailable
+    }
+
     public func clearError() {
         errorMessage = nil
     }
@@ -369,5 +403,17 @@ public final class ShadowAppState {
                 self?.verificationUpdate = update
             }
         }
+    }
+
+    private var configuredPushGatewayURL: URL? {
+        guard let value = Bundle.main.object(
+            forInfoDictionaryKey: "ShadowPushGatewayURL"
+        ) as? String,
+        !value.isEmpty,
+        let url = URL(string: value),
+        url.scheme?.lowercased() == "https" else {
+            return nil
+        }
+        return url
     }
 }

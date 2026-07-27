@@ -205,6 +205,31 @@ public enum ShadowDeviceVerificationUpdate: Equatable, Sendable {
     case failed
 }
 
+public enum ShadowPushRegistrationState: String, Codable, Sendable {
+    case unavailable
+    case registering
+    case registered
+    case denied
+    case failed
+}
+
+public struct ShadowPushRegistration: Codable, Equatable, Sendable {
+    public let state: ShadowPushRegistrationState
+    public let registeredAt: Date?
+
+    public init(
+        state: ShadowPushRegistrationState,
+        registeredAt: Date? = nil
+    ) {
+        self.state = state
+        self.registeredAt = registeredAt
+    }
+
+    public static let unavailable = ShadowPushRegistration(
+        state: .unavailable
+    )
+}
+
 public enum ShadowServiceError: LocalizedError, Equatable, Sendable {
     case invalidHomeserver
     case invalidCredentials
@@ -216,6 +241,8 @@ public enum ShadowServiceError: LocalizedError, Equatable, Sendable {
     case unsupportedOperation
     case pairingExpired
     case bridgeUnavailable
+    case pushConfigurationMissing
+    case notificationPermissionDenied
     case cancelled
     case unknown(String)
 
@@ -241,6 +268,10 @@ public enum ShadowServiceError: LocalizedError, Equatable, Sendable {
             "Der Kopplungscode ist abgelaufen."
         case .bridgeUnavailable:
             "Die Bridge ist derzeit nicht erreichbar."
+        case .pushConfigurationMissing:
+            "Für diesen Build ist kein Push-Gateway konfiguriert."
+        case .notificationPermissionDenied:
+            "Mitteilungen sind für ShadowChat nicht erlaubt."
         case .cancelled:
             "Der Vorgang wurde abgebrochen."
         case .unknown(let message):
