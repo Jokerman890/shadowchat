@@ -20,7 +20,7 @@ extension MatrixRustClientService {
         do {
             var rooms: [ChatListItemViewState] = []
             for room in client.rooms() {
-                let info = try room.roomInfo()
+                let info = try await room.roomInfo()
                 guard info.membership == .joined, !info.isSpace else {
                     continue
                 }
@@ -34,7 +34,7 @@ extension MatrixRustClientService {
 
     func loadTimeline(roomID: String) async throws -> RoomTimelineSnapshotViewState {
         let context = try await timelineContext(roomID: roomID)
-        let roomTitle = try roomInfo(roomID: roomID).displayName
+        let roomTitle = try await roomInfo(roomID: roomID).displayName
         return RoomTimelineSnapshotViewState(
             roomId: roomID,
             roomTitle: roomTitle,
@@ -268,12 +268,12 @@ extension MatrixRustClientService {
         )
     }
 
-    private func roomInfo(roomID: String) throws -> RoomInfo {
+    private func roomInfo(roomID: String) async throws -> RoomInfo {
         guard let client,
               let room = try client.getRoom(roomId: roomID) else {
             throw ShadowServiceError.unknown("Der Matrix-Raum wurde nicht gefunden.")
         }
-        return try room.roomInfo()
+        return try await room.roomInfo()
     }
 }
 
