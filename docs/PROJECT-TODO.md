@@ -39,7 +39,7 @@ festlegen.
 
 - [x] Diff `main...codex/shadowchat-ios-product-shell` fachlich prüfen.
 - [x] Prüfen, ob ein offener Pull Request für den Produktbranch existiert.
-- [ ] iOS-CI, Rust-CI und Android-CI für den exakten Head-Commit ausführen.
+- [x] iOS-CI, Rust-CI und Android-CI für den exakten Head-Commit ausführen.
 - [x] Offene Review-Kommentare und fehlgeschlagene Checks abarbeiten.
 - [x] Unabhängige Slice-Branches einzeln bewerten:
   - `slice/room-list-adapter-contract`
@@ -52,8 +52,8 @@ Nachweis:
 
 - `docs/quality/branch-integration-plan-2026-07-27.md`
 - Pull Request `#19` verbindet den Produktbranch als Draft mit `main`.
-- Die CI-Aufgabe bleibt bis zur erfolgreichen Prüfung des neu veröffentlichten
-  exakten Head-Commits offen.
+- Der geprüfte Head `78411f5f2b3b5af31c453d73730e03db4f8b95eb`
+  bestand Android-, iOS- und Rust-CI.
 
 Akzeptanz:
 

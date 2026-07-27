@@ -20,6 +20,18 @@ Für den geprüften Ausgangs-Head waren Android-, iOS- und Rust-CI erfolgreich.
 Nach jeder weiteren Änderung ist der neue exakte Head erneut durch diese drei
 Workflows zu verifizieren.
 
+## CI-Nachweis der Integrationsprüfung
+
+Der veröffentlichte Head
+`78411f5f2b3b5af31c453d73730e03db4f8b95eb` bestand alle drei
+Plattformprüfungen:
+
+- [CI Android](https://github.com/Jokerman890/shadowchat/actions/runs/30272957018)
+- [CI iOS](https://github.com/Jokerman890/shadowchat/actions/runs/30272956777)
+- [CI Rust](https://github.com/Jokerman890/shadowchat/actions/runs/30272956781)
+
+Damit sind Diff-, PR-, Branch- und CI-Prüfung aus `P0-01` abgeschlossen.
+
 ## Entscheidung für den Produktbranch
 
 PR #19 ist der einzige Integrationsweg für den aktuellen iOS-Produktstand.
@@ -112,9 +124,10 @@ später gelöscht werden.
 - Reine Branch-Aufräumarbeiten erfolgen erst nach erfolgreicher Integration
   und mit ausdrücklicher Bestätigung.
 
-## Noch erforderlicher Abschlussnachweis
+## Noch vor dem Merge erforderlich
 
-- Erfolgreiche Android-, iOS- und Rust-CI für den finalen PR-Head
 - Unabhängige Review von PR #19
 - Aufgelöste Review-Kommentare
 - Final konfliktfreier, mergefähiger Zustand
+- Erneut erfolgreiche Android-, iOS- und Rust-CI, falls sich der PR-Head nach
+  diesem Nachweis noch ändert
