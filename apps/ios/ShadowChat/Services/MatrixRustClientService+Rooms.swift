@@ -311,30 +311,28 @@ extension MatrixRustClientService {
             return nil
         }
 
-        let date = Date(timeIntervalSince1970: TimeInterval(event.timestamp) / 1_000)
-        return RoomTimelineItemViewState(
-            messageId: String(describing: item.uniqueId()),
-            senderDisplayName: event.isOwn ? sessionSnapshot.account?.displayName : event.sender,
-            body: message.body,
-            sentAtLabel: date.formatted(date: .omitted, time: .shortened),
-            direction: event.isOwn ? .outgoing : .incoming,
-            deliveryState: deliveryState(for: event)
-        )
-    }
-
-    private func deliveryState(
-        for event: EventTimelineItem
-    ) -> RoomTimelineDeliveryState {
-        switch event.localSendState {
+        let sendState: RoomTimelineProjectionSendState = switch event.localSendState {
         case .notSentYet:
-            .sending
+            .notSentYet
         case .sendingFailed:
-            .failed
+            .sendingFailed
         case .sent:
             .sent
         case nil:
-            .delivered
+            .remote
         }
+        return RoomTimelineProjection.makeItem(
+            RoomTimelineProjectionInput(
+                identifier: item.uniqueId(),
+                senderDisplayName: event.isOwn
+                    ? sessionSnapshot.account?.displayName
+                    : event.sender,
+                body: message.body,
+                timestampMilliseconds: event.timestamp,
+                direction: event.isOwn ? .outgoing : .incoming,
+                sendState: sendState
+            )
+        )
     }
 
     private func roomInfo(roomID: String) async throws -> RoomInfo {

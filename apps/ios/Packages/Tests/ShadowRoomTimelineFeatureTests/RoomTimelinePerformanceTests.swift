@@ -1,4 +1,3 @@
-import Foundation
 import XCTest
 @testable import ShadowRoomTimelineFeature
 
@@ -36,17 +35,10 @@ final class RoomTimelinePerformanceTests: XCTestCase {
             options: measurementOptions
         ) {
             mappedItems = RoomTimelineProjection.map(fixture.mappingItems) { item in
-                guard item.shouldInclude else {
+                guard let input = item.projectionInput else {
                     return nil
                 }
-                return RoomTimelineItemViewState(
-                    messageId: item.messageId,
-                    senderDisplayName: item.senderDisplayName,
-                    body: item.body,
-                    sentAtLabel: item.sentAtLabel,
-                    direction: item.direction,
-                    deliveryState: item.deliveryState
-                )
+                return RoomTimelineProjection.makeItem(input)
             }
         }
 
@@ -118,27 +110,42 @@ private struct TimelinePerformanceFixture {
         baseItems = baseFixture
         resetItems = resetFixture
         diffBurst = burst
-        expectedMappedItemCount = mappingFixture.lazy.filter(\.shouldInclude).count
+        expectedMappedItemCount = mappingFixture.lazy
+            .compactMap(\.projectionInput)
+            .count
     }
 }
 
 private struct TimelineMappingItem {
-    let messageId: String
-    let senderDisplayName: String?
-    let body: String
-    let sentAtLabel: String
-    let direction: RoomTimelineMessageDirection
-    let deliveryState: RoomTimelineDeliveryState
-    let shouldInclude: Bool
+    let projectionInput: RoomTimelineProjectionInput<TimelineFixtureIdentifier>?
 
     init(index: Int) {
-        messageId = "message-\(index)"
-        senderDisplayName = index.isMultiple(of: 2) ? "Ari" : nil
-        body = "Deterministic message body \(index)"
-        sentAtLabel = String(format: "%02d:%02d", index % 24, index % 60)
-        direction = index.isMultiple(of: 2) ? .incoming : .outgoing
-        deliveryState = index.isMultiple(of: 3) ? .read : .delivered
-        shouldInclude = !index.isMultiple(of: 8)
+        guard !index.isMultiple(of: 8) else {
+            projectionInput = nil
+            return
+        }
+        projectionInput = RoomTimelineProjectionInput(
+            identifier: TimelineFixtureIdentifier(index: index),
+            senderDisplayName: index.isMultiple(of: 2) ? "Ari" : nil,
+            body: "Deterministic message body \(index)",
+            timestampMilliseconds: 1_784_800_000_000 + UInt64(index * 1_000),
+            direction: index.isMultiple(of: 2) ? .incoming : .outgoing,
+            sendState: index.isMultiple(of: 3) ? .remote : .sent
+        )
+    }
+}
+
+private struct TimelineFixtureIdentifier: CustomStringConvertible {
+    let eventID: String
+    let transactionID: String?
+
+    init(index: Int) {
+        eventID = "$event-\(index):shadowchat.example"
+        transactionID = index.isMultiple(of: 4) ? "transaction-\(index)" : nil
+    }
+
+    var description: String {
+        transactionID ?? eventID
     }
 }
 

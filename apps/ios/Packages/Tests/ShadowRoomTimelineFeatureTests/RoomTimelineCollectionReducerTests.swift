@@ -10,6 +10,53 @@ final class RoomTimelineCollectionReducerTests: XCTestCase {
         XCTAssertEqual(result, ["item-2", "item-4"])
     }
 
+    func testProjectionMapsPresentationFieldsAndSendState() {
+        let input = RoomTimelineProjectionInput(
+            identifier: TestIdentifier(value: "event-1"),
+            senderDisplayName: "Ari",
+            body: "Hello",
+            timestampMilliseconds: 1_784_800_000_000,
+            direction: .outgoing,
+            sendState: .sendingFailed
+        )
+
+        let result = RoomTimelineProjection.makeItem(input)
+
+        XCTAssertEqual(result.messageId, "event-1")
+        XCTAssertEqual(result.senderDisplayName, "Ari")
+        XCTAssertEqual(result.body, "Hello")
+        XCTAssertFalse(result.sentAtLabel.isEmpty)
+        XCTAssertEqual(result.direction, .outgoing)
+        XCTAssertEqual(result.deliveryState, .failed)
+    }
+
+    func testProjectionMapsAllSendStates() {
+        let cases: [
+            (RoomTimelineProjectionSendState, RoomTimelineDeliveryState)
+        ] = [
+            (.notSentYet, .sending),
+            (.sendingFailed, .failed),
+            (.sent, .sent),
+            (.remote, .delivered)
+        ]
+
+        for (sendState, expectedDeliveryState) in cases {
+            let input = RoomTimelineProjectionInput(
+                identifier: TestIdentifier(value: "event"),
+                senderDisplayName: nil,
+                body: "Message",
+                timestampMilliseconds: 1_784_800_000_000,
+                direction: .incoming,
+                sendState: sendState
+            )
+
+            XCTAssertEqual(
+                RoomTimelineProjection.makeItem(input).deliveryState,
+                expectedDeliveryState
+            )
+        }
+    }
+
     func testReducerAppliesAllSupportedMutations() {
         var items = [1, 2, 3]
 
@@ -39,5 +86,13 @@ final class RoomTimelineCollectionReducerTests: XCTestCase {
         RoomTimelineCollectionReducer.remove(at: -1, from: &items)
 
         XCTAssertEqual(items, [1, 2, 3])
+    }
+}
+
+private struct TestIdentifier: CustomStringConvertible {
+    let value: String
+
+    var description: String {
+        value
     }
 }

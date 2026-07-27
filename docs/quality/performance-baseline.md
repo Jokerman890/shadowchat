@@ -108,7 +108,10 @@ Für Timeline-Mapping und Timeline-Diff-Bursts existieren deterministische
 XCTest-Fälle mit 100, 1.000 und 10.000 Elementen. Jeder Fall erfasst zehn
 Wiederholungen mit `XCTClockMetric`; XCTest führt davor einen nicht gewerteten
 Warm-up-Lauf aus. Der gemessene Code ist derselbe generische Projektions- und
-Array-Mutationspfad, den der Matrix-Adapter nutzt.
+Array-Mutationspfad, den der Matrix-Adapter nutzt. Der Projektionspfad umfasst
+Identifier-Konvertierung, Zeitstempelkonvertierung, lokalisierte
+Zeitformatierung und Delivery-State-Mapping. Nur die SDK-spezifische
+Event-Extraktion bleibt an der Adaptergrenze.
 
 Auf macOS:
 
