@@ -16,18 +16,12 @@ actor MatrixRustClientService: ShadowClientService {
     var verificationController: SessionVerificationController?
     var verificationDelegate: MatrixSessionVerificationDelegate?
     var registeredPushIdentifiers: PusherIdentifiers?
-    var bridgeStates: [
-        ShadowBridgeKind: ShadowBridgeConnectionState
-    ] = [:]
+    var bridgeStates: [ShadowBridgeKind: ShadowBridgeConnectionState] = [:]
     var pendingBridgePairings: [UUID: MatrixBridgePairingContext] = [:]
     var verificationStateListener: TaskHandle?
     var recoveryStateListener, backupStateListener: TaskHandle?
-    var securityContinuations: [
-        UUID: AsyncStream<ShadowSecuritySnapshot>.Continuation
-    ] = [:]
-    var verificationContinuations: [
-        UUID: AsyncStream<ShadowDeviceVerificationUpdate>.Continuation
-    ] = [:]
+    var securityContinuations: [UUID: AsyncStream<ShadowSecuritySnapshot>.Continuation] = [:]
+    var verificationContinuations: [UUID: AsyncStream<ShadowDeviceVerificationUpdate>.Continuation] = [:]
 
     init(keychain: MatrixSessionKeychain = MatrixSessionKeychain()) {
         self.keychain = keychain
