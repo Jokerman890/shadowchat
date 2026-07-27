@@ -59,3 +59,11 @@ Auf macOS mit Xcode:
 - `cd Packages && swift test`
 - `xcodebuild -list -project ShadowChat.xcodeproj`
 - `xcodebuild build -project ShadowChat.xcodeproj -scheme ShadowChat -sdk iphonesimulator -destination "generic/platform=iOS Simulator" -skipPackagePluginValidation CODE_SIGNING_ALLOWED=NO`
+
+## Performance-Messung
+
+Messbudgets, Referenzgeräte, Instruments-Ablauf und Signpost-Namen stehen in
+`../../docs/quality/performance-baseline.md`. Runtime-Baselines werden mit
+Release-Builds auf physischen Geräten erhoben; Debug- oder Simulatorzeiten
+gelten nicht als Produktmessung. Textuelle Ergebnisse werden unter
+`../../docs/quality/performance-results/` versioniert.

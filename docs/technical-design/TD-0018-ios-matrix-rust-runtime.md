@@ -192,6 +192,14 @@ Pagination, explizite Initialisierungssignale, begrenzte Timeline-Kontexte und
 gezieltes Diff-Mapping. Gemessen werden Callback-zu-Repository-Latenz,
 Main-Actor-Zeit, Kopiermengen, Queue-Tiefe und Speicher.
 
+Das App-Target instrumentiert die äußeren Service- und Repository-Grenzen mit
+`OSSignposter`. Das feste Subsystem `de.shadowchat.ios`, die Kategorien
+`Performance.Session` und `Performance.Repository` sowie die Intervallnamen
+sind in `docs/quality/performance-baseline.md` dokumentiert. Signposts enthalten
+keine Account-, Raum- oder Nachrichteninhalte. Runtime-Baselines werden
+ausschließlich mit Release-Builds auf physischen Referenzgeräten erstellt;
+Debug- und Simulatorwerte bleiben Korrektheitsdiagnostik.
+
 Adapterinterne Listener müssen bei Raum-, Session- und Accountwechsel
 deterministisch beendet werden. Eine spätere Aufteilung des Actors darf nie
 mehr als einen Client-, Sync-, Crypto- oder Store-Owner pro Account erzeugen.

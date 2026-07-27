@@ -1,5 +1,6 @@
 import Foundation
 import MatrixRustSDK
+import OSLog
 import ShadowCoreContracts
 import ShadowRoomTimelineFeature
 
@@ -36,6 +37,11 @@ actor MatrixRustClientService: ShadowClientService {
     }
 
     func restoreSession() async throws -> ShadowSessionSnapshot? {
+        let interval = ShadowPerformanceSignposts.session.beginInterval("SessionRestore")
+        defer {
+            ShadowPerformanceSignposts.session.endInterval("SessionRestore", interval)
+        }
+
         guard let token = try keychain.activeToken() else {
             return nil
         }
@@ -145,6 +151,11 @@ actor MatrixRustClientService: ShadowClientService {
     }
 
     func startSync() async throws -> ShadowSessionSnapshot {
+        let interval = ShadowPerformanceSignposts.session.beginInterval("SyncStart")
+        defer {
+            ShadowPerformanceSignposts.session.endInterval("SyncStart", interval)
+        }
+
         guard let client, sessionSnapshot.state.grantsMessagingAccess else {
             throw ShadowServiceError.sessionExpired
         }

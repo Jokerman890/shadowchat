@@ -1,3 +1,4 @@
+import OSLog
 import ShadowChatAppShell
 import ShadowChatListFeature
 import ShadowRoomTimelineFeature
@@ -18,7 +19,12 @@ private struct MatrixChatListRepository: ChatListRepository {
     let service: MatrixRustClientService
 
     func loadChatList() async throws -> [ChatListItemViewState] {
-        try await service.loadChatList()
+        let interval = ShadowPerformanceSignposts.repository.beginInterval("RoomListLoad")
+        defer {
+            ShadowPerformanceSignposts.repository.endInterval("RoomListLoad", interval)
+        }
+
+        return try await service.loadChatList()
     }
 }
 
@@ -26,7 +32,12 @@ private struct MatrixRoomTimelineRepository: RoomTimelineRepository {
     let service: MatrixRustClientService
 
     func loadTimeline(roomId: String) async throws -> RoomTimelineSnapshotViewState {
-        try await service.loadTimeline(roomID: roomId)
+        let interval = ShadowPerformanceSignposts.repository.beginInterval("TimelineLoad")
+        defer {
+            ShadowPerformanceSignposts.repository.endInterval("TimelineLoad", interval)
+        }
+
+        return try await service.loadTimeline(roomID: roomId)
     }
 
     func timelineUpdates(
@@ -39,6 +50,11 @@ private struct MatrixRoomTimelineRepository: RoomTimelineRepository {
         roomId: String,
         body: String
     ) async throws {
+        let interval = ShadowPerformanceSignposts.repository.beginInterval("MessageSend")
+        defer {
+            ShadowPerformanceSignposts.repository.endInterval("MessageSend", interval)
+        }
+
         try await service.sendMessage(roomID: roomId, body: body)
     }
 }

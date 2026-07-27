@@ -107,7 +107,7 @@ Akzeptanz:
 Ziel: Performance nicht mehr nur aus Code abzuleiten, sondern reproduzierbar
 zu messen.
 
-- [ ] Messbudgets für folgende Vorgänge festlegen:
+- [x] Messbudgets für folgende Vorgänge festlegen:
   - Cold Start und Warm Start
   - Session Restore
   - erste sichtbare Raumliste
