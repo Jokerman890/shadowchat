@@ -34,6 +34,7 @@
 - `technical-design/TD-0015-ffi-dto-surface.md`
 - `technical-design/TD-0016-mobile-repository-swap-boundary.md`
 - `technical-design/TD-0017-ios-product-shell.md`
+- `technical-design/TD-0018-ios-matrix-rust-runtime.md`
 
 ## Architekturentscheidungen
 - `adr/ADR-0001-monorepo.md`

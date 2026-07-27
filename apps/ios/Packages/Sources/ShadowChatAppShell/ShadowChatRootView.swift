@@ -23,7 +23,7 @@ public struct ShadowChatRootView: View {
         )
     }
 
-    init(
+    public init(
         appState: ShadowAppState,
         repositoryProvider: any ShadowRepositoryProvider
     ) {

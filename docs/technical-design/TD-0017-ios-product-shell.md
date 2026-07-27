@@ -2,7 +2,8 @@
 
 ## Status
 
-Implementierter iOS-Slice mit expliziter lokaler Laufzeit. Kein Matrix-Live-Adapter.
+Implementierter iOS-Produkt-Shell. Der App-Einstieg verwendet den in TD-0018
+beschriebenen Matrix-Live-Adapter; die lokale Laufzeit bleibt für Previews und Tests.
 
 ## Ziel
 
@@ -29,7 +30,7 @@ Das Modul importiert weder SwiftUI noch MatrixRustSDK.
 
 `ShadowAppState` ist `@MainActor`-isoliert und mit Observation beobachtbar. Er besitzt den injizierten `ShadowClientService` und übersetzt Service-Ergebnisse in UI-State.
 
-`PreviewShadowClientService` ist ein Actor für deterministische lokale Produktflüsse. Die Onboarding-UI kennzeichnet diesen Modus sichtbar. Der Service speichert keine Zugangsdaten und führt keine Netzwerkzugriffe aus.
+`PreviewShadowClientService` ist ein Actor für deterministische lokale Produktflüsse. Die Onboarding-UI kennzeichnet diesen Modus sichtbar. Der Service speichert keine Zugangsdaten und führt keine Netzwerkzugriffe aus. Der ausgelieferte App-Einstieg injiziert dagegen `MatrixRustClientService`.
 
 ### Room Timeline
 
@@ -68,17 +69,12 @@ Room-Navigation bleibt im App-Shell, während Chat-Liste und Timeline stateless 
 
 ## Noch notwendige Produktionsarbeit
 
-Der App-Store-fähige Matrix-Live-Build benötigt:
+Der App-Store-fähige Matrix-Live-Build benötigt nach TD-0018 weiterhin:
 
-- produktiven `ShadowClientService` auf MatrixRustSDK
 - OIDC/MAS und Password-Login gemäß Server-Capabilities
-- Keychain-Restoration-Token und verschlüsselten SQLite-Store
-- Room-List-/Timeline-Streaming mit Cancellation
 - E2EE-Verifikation und Recovery
 - Push/NSE und Share Extension
 - reale mautrix-Management-Room-Adapter
-
-Diese Punkte sind keine UI-Platzhalter: Die UI-Grenzen existieren, aber der Standard-Build aktiviert sie absichtlich nicht als vermeintlich echte Netzwerkfunktion.
 
 ## Validierung
 

@@ -85,7 +85,7 @@ private struct ShadowBridgeCard: View {
                         .foregroundStyle(.orange)
                 }
 
-                if bridge.kind != .matrix {
+                if bridge.kind != .matrix, bridge.state != .unavailable {
                     Button(bridge.state.isOperational ? "Verbindung trennen" : "Gerät koppeln") {
                         bridge.state.isOperational ? disconnect() : pair()
                     }

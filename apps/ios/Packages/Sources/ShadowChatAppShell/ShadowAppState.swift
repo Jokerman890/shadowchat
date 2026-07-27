@@ -35,6 +35,7 @@ public final class ShadowAppState {
         do {
             if let restored = try await clientService.restoreSession() {
                 session = restored
+                session = try await clientService.startSync()
                 await refreshBridges()
             } else {
                 session = await clientService.currentSession()

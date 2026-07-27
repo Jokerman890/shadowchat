@@ -71,6 +71,10 @@ targets:
     dependencies:
       - package: ShadowChatMobile
         product: ShadowChatAppShell
+      - package: ShadowChatMobile
+        product: ShadowChatListFeature
+      - package: ShadowChatMobile
+        product: ShadowRoomTimelineFeature
       - package: MatrixRustSDK
         product: MatrixRustSDK
       - package: KeychainAccess
