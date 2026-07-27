@@ -3,6 +3,17 @@ import Foundation
 public protocol ShadowSessionService: Actor {
     nonisolated var runtimeEnvironment: ShadowRuntimeEnvironment { get }
 
+    func discoverAuthentication(
+        homeserver: URL
+    ) async throws -> ShadowAuthenticationDiscovery
+    func beginOAuthSignIn(
+        homeserver: URL,
+        loginHint: String?
+    ) async throws -> ShadowOAuthAuthorization
+    func completeOAuthSignIn(
+        callbackURL: URL
+    ) async throws -> ShadowSessionSnapshot
+    func cancelOAuthSignIn() async
     func restoreSession() async throws -> ShadowSessionSnapshot?
     func signIn(_ request: ShadowLoginRequest) async throws -> ShadowSessionSnapshot
     func currentSession() async -> ShadowSessionSnapshot

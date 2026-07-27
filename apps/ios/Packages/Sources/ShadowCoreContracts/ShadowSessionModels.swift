@@ -5,6 +5,44 @@ public enum ShadowRuntimeEnvironment: String, Codable, Sendable {
     case localPreview
 }
 
+public enum ShadowAuthenticationMode: String, Codable, Sendable {
+    case oauth
+    case password
+    case unsupported
+}
+
+public struct ShadowAuthenticationDiscovery: Codable, Equatable, Sendable {
+    public let homeserver: URL
+    public let mode: ShadowAuthenticationMode
+    public let supportsAccountCreation: Bool
+
+    public init(
+        homeserver: URL,
+        mode: ShadowAuthenticationMode,
+        supportsAccountCreation: Bool
+    ) {
+        self.homeserver = homeserver
+        self.mode = mode
+        self.supportsAccountCreation = supportsAccountCreation
+    }
+}
+
+public struct ShadowOAuthAuthorization: Equatable, Identifiable, Sendable {
+    public let id: UUID
+    public let authorizationURL: URL
+    public let callbackScheme: String
+
+    public init(
+        id: UUID = UUID(),
+        authorizationURL: URL,
+        callbackScheme: String
+    ) {
+        self.id = id
+        self.authorizationURL = authorizationURL
+        self.callbackScheme = callbackScheme
+    }
+}
+
 public enum ShadowSessionState: String, Codable, CaseIterable, Sendable {
     case launching
     case signedOut

@@ -33,6 +33,31 @@ actor PreviewShadowClientService: ShadowClientService {
         ]
     }
 
+    func discoverAuthentication(
+        homeserver: URL
+    ) async throws -> ShadowAuthenticationDiscovery {
+        ShadowAuthenticationDiscovery(
+            homeserver: homeserver,
+            mode: .password,
+            supportsAccountCreation: false
+        )
+    }
+
+    func beginOAuthSignIn(
+        homeserver: URL,
+        loginHint: String?
+    ) async throws -> ShadowOAuthAuthorization {
+        throw ShadowServiceError.unsupportedOperation
+    }
+
+    func completeOAuthSignIn(
+        callbackURL: URL
+    ) async throws -> ShadowSessionSnapshot {
+        throw ShadowServiceError.unsupportedOperation
+    }
+
+    func cancelOAuthSignIn() async {}
+
     func restoreSession() async throws -> ShadowSessionSnapshot? {
         nil
     }

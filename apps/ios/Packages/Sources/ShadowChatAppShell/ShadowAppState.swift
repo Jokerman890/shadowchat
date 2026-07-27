@@ -1,3 +1,4 @@
+import AuthenticationServices
 import Foundation
 import Observation
 import ShadowCoreContracts
@@ -8,6 +9,7 @@ public final class ShadowAppState {
     public private(set) var session: ShadowSessionSnapshot
     public private(set) var bridges: [ShadowBridgeSnapshot]
     public private(set) var activePairingSession: ShadowPairingSession?
+    public private(set) var authenticationDiscovery: ShadowAuthenticationDiscovery?
     public private(set) var isBusy: Bool
     public private(set) var errorMessage: String?
 
@@ -70,6 +72,86 @@ public final class ShadowAppState {
                 environment: session.environment
             )
         }
+    }
+
+    public func discoverAuthentication(homeserver: URL) async {
+        guard !isBusy else { return }
+        isBusy = true
+        errorMessage = nil
+        defer { isBusy = false }
+
+        do {
+            authenticationDiscovery = try await clientService
+                .discoverAuthentication(homeserver: homeserver)
+        } catch {
+            authenticationDiscovery = nil
+            present(error)
+        }
+    }
+
+    public func beginOAuthSignIn(
+        homeserver: URL,
+        loginHint: String?
+    ) async -> ShadowOAuthAuthorization? {
+        guard !isBusy else { return nil }
+        isBusy = true
+        errorMessage = nil
+        defer { isBusy = false }
+
+        do {
+            return try await clientService.beginOAuthSignIn(
+                homeserver: homeserver,
+                loginHint: loginHint
+            )
+        } catch {
+            present(error)
+            return nil
+        }
+    }
+
+    public func completeOAuthSignIn(callbackURL: URL) async {
+        guard !isBusy else { return }
+        isBusy = true
+        errorMessage = nil
+        session = ShadowSessionSnapshot(
+            state: .authenticating,
+            environment: session.environment
+        )
+        defer { isBusy = false }
+
+        do {
+            session = try await clientService.completeOAuthSignIn(
+                callbackURL: callbackURL
+            )
+            session = try await clientService.startSync()
+            authenticationDiscovery = nil
+            await refreshBridges()
+        } catch {
+            present(error)
+            session = ShadowSessionSnapshot(
+                state: .signedOut,
+                environment: session.environment
+            )
+        }
+    }
+
+    public func cancelOAuthSignIn(error: (any Error)? = nil) async {
+        await clientService.cancelOAuthSignIn()
+        if let error {
+            let authenticationError = error as NSError
+            let wasCancelled = authenticationError.domain
+                == ASWebAuthenticationSessionErrorDomain
+                && authenticationError.code
+                == ASWebAuthenticationSessionError.canceledLogin.rawValue
+            if !wasCancelled {
+                present(error)
+            }
+        }
+    }
+
+    public func resetAuthenticationDiscovery() async {
+        await clientService.cancelOAuthSignIn()
+        authenticationDiscovery = nil
     }
 
     public func signOut() async {

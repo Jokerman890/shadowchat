@@ -5,12 +5,13 @@ import ShadowCoreContracts
 actor MatrixRustClientService: ShadowClientService {
     nonisolated let runtimeEnvironment = ShadowRuntimeEnvironment.matrix
 
-    private let keychain: MatrixSessionKeychain
+    let keychain: MatrixSessionKeychain
     var client: Client?
     private var syncService: SyncService?
-    private var activeToken: MatrixRestorationToken?
+    var activeToken: MatrixRestorationToken?
     var sessionSnapshot: ShadowSessionSnapshot
     var timelines: [String: MatrixTimelineContext] = [:]
+    var pendingAuthentication: MatrixPendingAuthentication?
 
     init(keychain: MatrixSessionKeychain = MatrixSessionKeychain()) {
         self.keychain = keychain
@@ -72,6 +73,7 @@ actor MatrixRustClientService: ShadowClientService {
             throw ShadowServiceError.invalidCredentials
         }
 
+        await cancelOAuthSignIn()
         let directories = try MatrixSessionDirectories.create()
         let passphrase = try SecurePassphraseGenerator.make()
 
@@ -89,29 +91,18 @@ actor MatrixRustClientService: ShadowClientService {
                 deviceId: nil
             )
 
-            let sdkSession = try authenticatedClient.session()
-            let token = MatrixRestorationToken(
-                session: sdkSession,
-                directories: directories,
-                storePassphrase: passphrase
-            )
-            try keychain.save(token)
-
-            client = authenticatedClient
-            activeToken = token
-            sessionSnapshot = try makeSessionSnapshot(
+            return try activateAuthenticatedClient(
                 client: authenticatedClient,
-                state: .active,
-                lastSyncAt: nil
+                directories: directories,
+                passphrase: passphrase
             )
-            return sessionSnapshot
         } catch {
             try? directories.remove()
             throw mapError(error)
         }
     }
 
-    private func makeAuthenticationClient(
+    func makeAuthenticationClient(
         homeserver: URL,
         directories: MatrixSessionDirectories,
         passphrase: String
@@ -209,7 +200,7 @@ actor MatrixRustClientService: ShadowClientService {
         return sessionSnapshot
     }
 
-    private func makeSessionSnapshot(
+    func makeSessionSnapshot(
         client: Client,
         state: ShadowSessionState,
         lastSyncAt: Date?

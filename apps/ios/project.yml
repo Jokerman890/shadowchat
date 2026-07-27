@@ -90,16 +90,8 @@ targets:
         PRODUCT_MODULE_NAME: ShadowChat
         MARKETING_VERSION: 1.0.0
         CURRENT_PROJECT_VERSION: 1
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: ShadowChat
-        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.social-networking
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UIRequiresFullScreen: NO
-        INFOPLIST_KEY_NSCameraUsageDescription: ShadowChat verwendet die Kamera zum Scannen von QR-Codes und zum Aufnehmen von Medien.
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: ShadowChat verwendet das Mikrofon für Sprachnachrichten und Anrufe.
-        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: ShadowChat benötigt Zugriff auf deine Mediathek, damit du Medien senden kannst.
-        INFOPLIST_KEY_NSFaceIDUsageDescription: ShadowChat verwendet Face ID zum Schutz deiner lokalen Sitzung.
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Configuration/ShadowChat-Info.plist
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: ""
     scheme:
