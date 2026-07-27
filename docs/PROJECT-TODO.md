@@ -116,7 +116,7 @@ zu messen.
   - Senden bis lokaler Status sichtbar ist
   - Scroll-Jank in Raumliste und Timeline
   - Speicher nach Öffnen mehrerer Räume
-- [ ] iOS `os_signpost`-Messpunkte an Service- und Repository-Grenzen ergänzen.
+- [x] iOS `os_signpost`-Messpunkte an Service- und Repository-Grenzen ergänzen.
 - [ ] iOS-XCTest-Performancefälle für Mapping und Timeline-Diffs ergänzen.
 - [ ] Android-Macrobenchmark-Modul für Start und Scrollen anlegen.
 - [ ] Android Baseline Profile für die wichtigsten Startpfade prüfen.
