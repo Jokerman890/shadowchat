@@ -35,4 +35,4 @@ Auf macOS mit Xcode:
 - `xcodegen generate`
 - `cd Packages && swift test`
 - `xcodebuild -list -project ShadowChat.xcodeproj`
-- `xcodebuild build -project ShadowChat.xcodeproj -scheme ShadowChat -sdk iphonesimulator -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO`
+- `xcodebuild build -project ShadowChat.xcodeproj -scheme ShadowChat -sdk iphonesimulator -destination "generic/platform=iOS Simulator" -skipPackagePluginValidation CODE_SIGNING_ALLOWED=NO`
