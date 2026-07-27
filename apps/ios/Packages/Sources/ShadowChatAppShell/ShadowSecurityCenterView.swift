@@ -151,7 +151,7 @@ struct ShadowSecurityCenterView: View {
 
     @ViewBuilder
     private var recoverySection: some View {
-        Section("Recovery") {
+        Section {
             if let generatedKey = appState.generatedRecoveryKey {
                 Label(
                     "Speichere diesen Schlüssel jetzt. ShadowChat zeigt ihn nach dem Schließen nicht erneut an.",
@@ -209,6 +209,8 @@ struct ShadowSecurityCenterView: View {
                 }
                 .disabled(appState.isBusy)
             }
+        } header: {
+            Text("Recovery")
         } footer: {
             Text("Recovery lädt verschlüsselte Raumschlüssel aus deinem Matrix-Schlüssel-Backup.")
         }
