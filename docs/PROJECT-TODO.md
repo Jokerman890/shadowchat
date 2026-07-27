@@ -51,9 +51,9 @@ festlegen.
 Nachweis:
 
 - `docs/quality/branch-integration-plan-2026-07-27.md`
-- Pull Request `#19` verbindet den Produktbranch als Draft mit `main`.
-- Der geprüfte Head `78411f5f2b3b5af31c453d73730e03db4f8b95eb`
-  bestand Android-, iOS- und Rust-CI.
+- Pull Request `#19` verbindet den reviewbereiten Produktbranch mit `main`.
+- Der geprüfte Code-Head `d678cc87197bcd28e993ca804c716f441365b6b9`
+  bestand Android-, iOS- und Rust-CI; alle Review-Threads sind aufgelöst.
 
 Akzeptanz:
 
