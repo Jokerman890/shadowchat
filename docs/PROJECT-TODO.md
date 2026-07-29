@@ -118,7 +118,7 @@ zu messen.
   - Speicher nach Öffnen mehrerer Räume
 - [x] iOS `os_signpost`-Messpunkte an Service- und Repository-Grenzen ergänzen.
 - [x] iOS-XCTest-Performancefälle für Mapping und Timeline-Diffs ergänzen.
-- [ ] Android-Macrobenchmark-Modul für Start und Scrollen anlegen.
+- [x] Android-Macrobenchmark-Modul für Start und Scrollen anlegen.
 - [ ] Android Baseline Profile für die wichtigsten Startpfade prüfen.
 - [ ] Rust-Benchmarks für DTO-Mapping und größere Snapshots ergänzen.
 - [ ] Deterministische Fixtures definieren:

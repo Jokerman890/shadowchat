@@ -25,6 +25,9 @@ jobs:
       - name: Build Android debug app
         working-directory: apps/android
         run: ./gradlew assembleDebug
+      - name: Build Android macrobenchmarks
+        working-directory: apps/android
+        run: ./gradlew :app:assembleBenchmark :macrobenchmark:assembleBenchmark
       - name: Run Android unit tests
         working-directory: apps/android
         run: ./gradlew testDebugUnitTest

@@ -129,6 +129,47 @@ Geräte-Runtime-Baseline ausgegeben. Die Tests werden erst zu CI-Gates, wenn
 auch die Raumlisten-Fixtures vollständig sind und mehrere Geräte-Baselines
 stabil vorliegen.
 
+## Android-Macrobenchmarks
+
+Das separate Gradle-Modul `apps/android/macrobenchmark` misst die
+produktionsnahe, nicht-debuggable und minifizierte `benchmark`-Variante der
+App. Diese Variante ist nur für Shell-Profiling freigegeben und wird lokal mit
+dem Debug-Schlüssel signiert.
+
+Die aktuelle Suite enthält:
+
+- je zehn Cold- und Warm-Starts mit `StartupTimingMetric`
+- zehn Raumlisten-Scrollläufe mit `FrameTimingMetric`
+- `CompilationMode.None()`, damit die Vorher-Messung ohne Baseline Profile
+  eindeutig bleibt
+
+Der Scrolllauf verwendet derzeit die acht lokalen Demo-Räume. Er prüft den
+Messpfad und liefert vergleichbare Frame-Traces, ersetzt aber noch nicht die
+separat geplanten deterministischen 100-, 1.000- und 10.000-Element-Fixtures.
+Die kurze Demo-Timeline wird deshalb noch nicht als belastbarer Scrollfall
+ausgegeben.
+
+Auf einem physischen Android-Gerät ab API 28:
+
+```bash
+cd apps/android
+./gradlew :macrobenchmark:connectedBenchmarkAndroidTest
+```
+
+Der reine Kompilierungsnachweis ohne verbundenes Gerät lautet:
+
+```bash
+cd apps/android
+./gradlew :app:assembleBenchmark :macrobenchmark:assembleBenchmark
+```
+
+JSON-Berichte und Perfetto-Traces liegen nach einem Gerätelauf unter
+`apps/android/macrobenchmark/build/outputs/connected_android_test_additional_output/`.
+Erst ein dort erzeugter Lauf mit Gerät, Android-Build, Commit, Energie- und
+Thermalzustand darf als Runtime-Baseline unter
+`docs/quality/performance-results/` versioniert werden. Emulatorwerte dienen
+nur der Korrektheitsprüfung.
+
 ## Bekannte Hotspots
 
 Der aktuelle Code zeigt vor der ersten Messung bereits drei zu bestätigende
