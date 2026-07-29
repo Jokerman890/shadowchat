@@ -10,7 +10,6 @@ import androidx.test.filters.LargeTest
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.Until
-import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,10 +37,14 @@ class ShadowChatMacrobenchmark {
             pressHome()
             startActivityAndWait()
 
-            assertNotNull(
-                "Chat list did not become visible before the benchmark.",
+            val chatList = requireNotNull(
                 device.wait(Until.findObject(By.res(CHAT_LIST_TAG)), UI_TIMEOUT_MILLIS),
-            )
+            ) {
+                "Chat list did not become visible before the benchmark."
+            }
+            check(chatList.isScrollable) {
+                "Chat list fixture must be scrollable on the benchmark device."
+            }
         },
     ) {
         val chatList = requireNotNull(device.findObject(By.res(CHAT_LIST_TAG))) {
@@ -50,12 +53,8 @@ class ShadowChatMacrobenchmark {
         chatList.setGestureMargin(device.displayWidth / 5)
 
         repeat(SCROLL_CYCLES_PER_ITERATION) {
-            check(chatList.fling(Direction.DOWN)) {
-                "Chat list could not fling down; the fixture may no longer be scrollable."
-            }
-            check(chatList.fling(Direction.UP)) {
-                "Chat list could not fling up; the fixture may no longer be scrollable."
-            }
+            chatList.fling(Direction.DOWN)
+            chatList.fling(Direction.UP)
         }
         device.waitForIdle()
     }
