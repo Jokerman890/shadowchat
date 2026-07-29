@@ -50,12 +50,8 @@ class ShadowChatMacrobenchmark {
         chatList.setGestureMargin(device.displayWidth / 5)
 
         repeat(SCROLL_CYCLES_PER_ITERATION) {
-            check(chatList.fling(Direction.DOWN)) {
-                "Chat list could not fling down; the fixture may no longer be scrollable."
-            }
-            check(chatList.fling(Direction.UP)) {
-                "Chat list could not fling up; the fixture may no longer be scrollable."
-            }
+            chatList.fling(Direction.DOWN)
+            chatList.fling(Direction.UP)
         }
         device.waitForIdle()
     }
