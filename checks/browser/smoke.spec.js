@@ -5,6 +5,11 @@ const targetUrl =
   process.env.BASE_URL ||
   "https://shadowchat-preview.example.invalid";
 
+const obviousErrorTitle =
+  /^(?:404\b|page not found\b|not found\b|application error\b|internal server error\b)/i;
+const obviousErrorHeading =
+  /^(?:404(?:\s*[-:]\s*)?(?:error|page not found|not found)?|page not found|not found|application error|internal server error)$/i;
+
 test("ShadowChat preview exposes required browser metadata", async ({ page }) => {
   const response = await page.goto(targetUrl, { waitUntil: "domcontentloaded" });
 
@@ -23,9 +28,15 @@ test("ShadowChat preview exposes required browser metadata", async ({ page }) =>
     await expect(tag).toHaveAttribute("content", /\S+/);
   }
 
-  await expect(page.locator("body")).toBeVisible();
-  await expect(page.locator("body")).toContainText(/\S+/);
-  await expect(page.locator("body")).not.toContainText(
-    /404|not found|application error|internal server error/i,
-  );
+  const body = page.locator("body");
+  await expect(body).toBeVisible();
+  await expect(body).toContainText(/\S+/);
+
+  await expect(page).not.toHaveTitle(obviousErrorTitle);
+  await expect(body).not.toHaveText(obviousErrorHeading);
+  await expect(
+    page
+      .locator('h1, [role="heading"][aria-level="1"]')
+      .filter({ hasText: obviousErrorHeading }),
+  ).toHaveCount(0);
 });

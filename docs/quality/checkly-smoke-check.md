@@ -30,7 +30,7 @@ Diese Adresse ist bewusst keine produktive URL. Checkly oder CI muss spaeter ein
 - `meta[name="description"]` existiert und ist nicht leer
 - OpenGraph-Tags `og:title`, `og:description` und `og:url` existieren und sind nicht leer
 - `body` ist sichtbar und enthaelt Text
-- offensichtliche Fehlerseiten wie `404`, `Not Found`, `Application Error` oder `Internal Server Error` werden erkannt
+- offensichtliche Fehlerseiten wie `404`, `Not Found`, `Application Error` oder `Internal Server Error` werden ueber Seitentitel, Top-Level-Ueberschrift oder einen reinen Fehler-Body erkannt
 
 ## Spaetere Checkly-Einbindung
 
