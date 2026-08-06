@@ -61,6 +61,7 @@
 - `quality/branch-integration-plan-2026-07-27.md`
 - `quality/security-baseline.md`
 - `quality/test-strategy.md`
+- `quality/checkly-smoke-check.md`
 - `quality/release-definition.md`
 - `quality/privacy-logging-policy.md`
 
