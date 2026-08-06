@@ -4,6 +4,10 @@
 
 Akzeptiert als minimaler Rust/Core-Skeleton-Slice. Dieser Slice baut keine echte Matrix-SDK-Live-Integration.
 
+Durch ADR-0016 als historischer Contract-Prototyp eingeordnet. Das Crate wird
+nicht zur produktiven Matrix-Laufzeit ausgebaut. Vor einer produktiven Nutzung
+wird es auf pure Session-Policy reduziert oder eindeutig umbenannt.
+
 ## Ziel
 
 Das neue Crate `shadow_core_runtime` legt die Contract-Grundlage fuer eine spaetere Matrix Session Runtime. Es enthaelt nur Rust-Typen, Traits, DTOs, Commands, Events, Error-Kategorien und eine testbare No-op-Referenz.
@@ -27,7 +31,8 @@ Das Crate haengt nur an bestehenden Workspace-Dependencies und an `shadow_core_d
 
 ## 🧩 Architektur
 
-`shadow_core_runtime` sitzt zwischen zukuenftigen Matrix-Adaptern und den bereits dokumentierten Mobile-/FFI-Boundaries.
+`shadow_core_runtime` beschreibt wertbasierte Session-Contracts neben den
+Plattformadaptern. Es sitzt nicht im Room-List-/Timeline-Hot-Path.
 
 Die Struktur ist bewusst klein:
 
@@ -101,4 +106,6 @@ Fuer diesen Slice:
 
 ## Naechster sinnvoller Slice
 
-Der naechste Slice sollte die `Core Domain Contract Alignment`-Arbeit starten: Session-, Room-List- und Timeline-Domain-Modelle zwischen `core/contracts`, Rust-Crates und Mobile-Repositories angleichen, weiterhin ohne echte Matrix-SDK-Live-Anbindung.
+Ein eigener Migrationsslice soll das Crate auf pure Policy-/Contract-Aufgaben
+begrenzen, die irreführende Runtime-Bezeichnung bereinigen und gemeinsame
+Conformance-Fixtures für die Plattformadapter definieren.

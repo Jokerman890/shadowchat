@@ -4,6 +4,11 @@
 
 Akzeptiert als vorbereitender Rust/Core-Slice. Dieser Slice definiert eine FFI-/DTO-Surface, erzeugt aber keine Android-/iOS-Bindings.
 
+Durch ADR-0016 als nicht angebundener Contract-Prototyp eingeordnet. Für
+Session-, Room-List- oder Timeline-Laufzeit werden vorerst keine Mobile-Bindings
+erzeugt. Die Typen dürfen später nur für grobgranulare, pure Core-Funktionen
+weiterverwendet werden.
+
 ## Ziel
 
 Die FFI-/DTO-Surface macht Session State, Session Error, Session Snapshot und Session Command fuer spaetere mobile Bindings stabiler. Sie bleibt Rust-seitig und mappt zwischen internen `shadow_core_runtime`-Typen und stringnahen DTO-Typen.
@@ -41,7 +46,7 @@ IDs und URLs werden an der FFI-Grenze als `String` transportiert:
 
 Damit bleibt die mobile Seite frei von Rust-Newtype-Details, ohne die internen Core-Typen aufzugeben.
 
-## 🔄 Datenfluss
+## Historischer Prototyp-Datenfluss
 
 ```text
 Mobile Binding
@@ -53,7 +58,8 @@ Mobile Binding
   -> Mobile Binding
 ```
 
-Aktuell endet der Datenfluss weiterhin im `NoopMatrixSessionRuntime`. Es gibt keine echte Matrix-SDK-Live-Anbindung.
+Der Datenfluss endet im `NoopMatrixSessionRuntime` und ist in keiner Mobile-App
+angebunden. Er ist ausdrücklich nicht der Zielpfad für Matrix-Live-Daten.
 
 ## 🚫 Nicht-Ziele
 
@@ -99,4 +105,6 @@ Neue Tests pruefen:
 
 ## Naechster sinnvoller Slice
 
-Der naechste Slice sollte die Binding-Generator-Entscheidung dokumentieren oder einen kleinen FFI-Shape-Prototyp ohne generierte produktive Bindings vorbereiten.
+Vor jeder Binding-Generator-Entscheidung wird zuerst festgelegt, welche pure
+Core-Policy den zusätzlichen Binding-Aufwand rechtfertigt. Room-List- und
+Timeline-Diffs bleiben in den Plattformadaptern.

@@ -1,3 +1,4 @@
+import Foundation
 import ShadowDesignSystem
 import SwiftUI
 
@@ -5,13 +6,25 @@ public struct RoomTimelineView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let state: RoomTimelineState
+    private let securityState: RoomTimelineSecurityState
+    private let draft: String
+    private let isSending: Bool
+    private let sendErrorMessage: String?
     private let send: (RoomTimelineEvent) -> Void
 
     public init(
         state: RoomTimelineState,
+        securityState: RoomTimelineSecurityState = .unknown,
+        draft: String = "",
+        isSending: Bool = false,
+        sendErrorMessage: String? = nil,
         send: @escaping (RoomTimelineEvent) -> Void
     ) {
         self.state = state
+        self.securityState = securityState
+        self.draft = draft
+        self.isSending = isSending
+        self.sendErrorMessage = sendErrorMessage
         self.send = send
     }
 
@@ -24,11 +37,13 @@ public struct RoomTimelineView: View {
             .padding(.horizontal, ShadowSpacing.lg)
             .padding(.top, ShadowSpacing.xl)
         }
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .task {
-                send(.appeared)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if supportsComposer {
+                composerSurface
             }
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var header: some View {
@@ -46,15 +61,16 @@ public struct RoomTimelineView: View {
                         .font(.title2.weight(.bold))
                         .foregroundStyle(ShadowColors.deepText)
                         .lineLimit(1)
-                    Text("Timeline shell")
+                    Label(securityLabel, systemImage: securitySymbol)
                         .font(.subheadline)
-                        .foregroundStyle(ShadowColors.softText)
+                        .foregroundStyle(securityColor)
                 }
 
                 Spacer()
 
-                HeaderAction(systemName: "phone.fill", label: "Call")
-                HeaderAction(systemName: "video.fill", label: "Video")
+                Image(systemName: securityBadgeSymbol)
+                    .foregroundStyle(securityColor)
+                    .accessibilityLabel(securityLabel)
             }
             .padding(ShadowSpacing.md)
         }
@@ -66,6 +82,50 @@ public struct RoomTimelineView: View {
             return roomTitle ?? "Room"
         case .failed, .loading:
             return "Room"
+        }
+    }
+
+    private var securityLabel: String {
+        switch securityState {
+        case .encrypted:
+            return "Ende-zu-Ende verschlüsselt"
+        case .unencrypted:
+            return "Nicht Ende-zu-Ende verschlüsselt"
+        case .unknown:
+            return "Verschlüsselungsstatus unbekannt"
+        }
+    }
+
+    private var securitySymbol: String {
+        switch securityState {
+        case .encrypted:
+            return "lock.fill"
+        case .unencrypted:
+            return "lock.open.fill"
+        case .unknown:
+            return "questionmark.circle"
+        }
+    }
+
+    private var securityBadgeSymbol: String {
+        switch securityState {
+        case .encrypted:
+            return "lock.shield.fill"
+        case .unencrypted:
+            return "exclamationmark.shield.fill"
+        case .unknown:
+            return "questionmark.circle.fill"
+        }
+    }
+
+    private var securityColor: Color {
+        switch securityState {
+        case .encrypted:
+            return ShadowColors.whatsAppGreen
+        case .unencrypted:
+            return .orange
+        case .unknown:
+            return ShadowColors.softText
         }
     }
 
@@ -82,30 +142,30 @@ public struct RoomTimelineView: View {
             .frame(maxWidth: .infinity)
             Spacer()
         case let .loaded(_, items):
-            VStack(spacing: ShadowSpacing.md) {
-                ScrollView {
-                    LazyVStack(spacing: ShadowSpacing.sm) {
-                        Text("Today")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(ShadowColors.softText)
-                            .padding(.horizontal, ShadowSpacing.md)
-                            .padding(.vertical, ShadowSpacing.xs)
-                            .background(.ultraThinMaterial, in: Capsule())
+            ScrollView {
+                LazyVStack(spacing: ShadowSpacing.sm) {
+                    Text("Today")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(ShadowColors.softText)
+                        .padding(.horizontal, ShadowSpacing.md)
+                        .padding(.vertical, ShadowSpacing.xs)
+                        .background(.ultraThinMaterial, in: Capsule())
 
-                        ForEach(items) { item in
-                            RoomTimelineMessageRow(item: item)
-                                .transition(.opacity.combined(with: .scale(scale: 0.985)))
-                        }
+                    ForEach(items) { item in
+                        RoomTimelineMessageRow(item: item)
+                            .transition(.opacity.combined(with: .scale(scale: 0.985)))
                     }
-                    .padding(.horizontal, ShadowSpacing.lg)
-                    .padding(.vertical, ShadowSpacing.md)
-                    .animation(ShadowMotion.stateTransition(reduceMotion: reduceMotion), value: items.map(\.messageId))
                 }
-                .refreshable {
-                    send(.refreshRequested)
-                }
-
-                TimelineComposer()
+                .padding(.horizontal, ShadowSpacing.lg)
+                .padding(.vertical, ShadowSpacing.md)
+                .animation(
+                    ShadowMotion.stateTransition(reduceMotion: reduceMotion),
+                    value: items.map(\.messageId)
+                )
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .refreshable {
+                send(.refreshRequested)
             }
         case .empty:
             Spacer()
@@ -141,33 +201,74 @@ public struct RoomTimelineView: View {
             Spacer()
         }
     }
-}
 
-private struct HeaderAction: View {
-    let systemName: String
-    let label: String
+    private var supportsComposer: Bool {
+        switch state {
+        case .loaded, .empty:
+            return true
+        case .loading, .failed:
+            return false
+        }
+    }
 
-    var body: some View {
-        Image(systemName: systemName)
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(ShadowColors.unreadBadge)
-            .frame(width: 38, height: 38)
-            .background(.ultraThinMaterial, in: Circle())
-            .overlay(Circle().stroke(.white.opacity(0.55), lineWidth: 0.8))
-            .accessibilityLabel(label)
+    private var composerSurface: some View {
+        VStack(spacing: ShadowSpacing.xs) {
+            if let sendErrorMessage {
+                Label(sendErrorMessage, systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+                    .padding(.horizontal, ShadowSpacing.lg)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            TimelineComposer(
+                draft: draft,
+                isSending: isSending,
+                draftChanged: { send(.draftChanged($0)) },
+                sendRequested: { send(.sendRequested) }
+            )
+        }
+        .padding(.vertical, ShadowSpacing.sm)
+        .background(.ultraThinMaterial)
     }
 }
 
 private struct TimelineComposer: View {
+    let draft: String
+    let isSending: Bool
+    let draftChanged: (String) -> Void
+    let sendRequested: () -> Void
+
     var body: some View {
         ShadowGlassPanel {
             HStack(spacing: ShadowSpacing.sm) {
-                ComposerIcon(systemName: "plus", label: "Attach")
-                Text("Message shell")
-                    .foregroundStyle(ShadowColors.softText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                ComposerIcon(systemName: "mic.fill", label: "Voice")
-                ComposerIcon(systemName: "paperplane.fill", label: "Send", emphasized: true)
+                TextField(
+                    "Nachricht",
+                    text: Binding(
+                        get: { draft },
+                        set: { updatedDraft in
+                            draftChanged(updatedDraft)
+                        }
+                    ),
+                    axis: .vertical
+                )
+                .lineLimit(1...5)
+                .submitLabel(.send)
+                .onSubmit(sendRequested)
+                Button(action: sendRequested) {
+                    if isSending {
+                        ProgressView()
+                            .tint(.black)
+                            .frame(width: 42, height: 42)
+                            .background(shadowAccentGradient, in: Circle())
+                    } else {
+                        ComposerIcon(systemName: "paperplane.fill", label: "Send", emphasized: true)
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
+                .accessibilityLabel(isSending ? "Nachricht wird gesendet" : "Senden")
+                .accessibilityValue(isSending ? "In Bearbeitung" : "")
             }
             .padding(.horizontal, ShadowSpacing.md)
             .padding(.vertical, ShadowSpacing.sm)

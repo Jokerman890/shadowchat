@@ -19,6 +19,7 @@ final class RoomTimelineViewModelTests: XCTestCase {
                     RoomTimelineSnapshotViewState(
                         roomId: "room-1",
                         roomTitle: "General",
+                        securityState: .encrypted,
                         items: [item]
                     )
                 )
@@ -31,6 +32,7 @@ final class RoomTimelineViewModelTests: XCTestCase {
             viewModel.state,
             .loaded(roomTitle: "General", items: [item])
         )
+        XCTAssertEqual(viewModel.securityState, .encrypted)
     }
 
     func testLoadPublishesEmptyState() async {
@@ -63,6 +65,37 @@ final class RoomTimelineViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.state, .failed)
     }
 
+    func testObserveTimelineAppliesStreamedSnapshot() async {
+        let updatedItem = RoomTimelineItemViewState(
+            messageId: "streamed-message",
+            senderDisplayName: "Ari",
+            body: "Live update",
+            sentAtLabel: "10:05",
+            direction: .incoming,
+            deliveryState: .delivered
+        )
+        let repository = StreamingRoomTimelineRepository(
+            updatedSnapshot: RoomTimelineSnapshotViewState(
+                roomId: "stream-room",
+                roomTitle: "Live Room",
+                securityState: .unencrypted,
+                items: [updatedItem]
+            )
+        )
+        let viewModel = RoomTimelineViewModel(
+            roomId: "stream-room",
+            repository: repository
+        )
+
+        await viewModel.observeTimeline()
+
+        XCTAssertEqual(
+            viewModel.state,
+            .loaded(roomTitle: "Live Room", items: [updatedItem])
+        )
+        XCTAssertEqual(viewModel.securityState, .unencrypted)
+    }
+
     func testRetryReloadsItems() async {
         let item = RoomTimelineItemViewState(
             messageId: "message-2",
@@ -93,6 +126,69 @@ final class RoomTimelineViewModelTests: XCTestCase {
             .loaded(roomTitle: "Recovered Room", items: [item])
         )
     }
+
+    func testSendReliesOnTimelineEchoAndClearsDraft() async {
+        let viewModel = RoomTimelineViewModel(
+            roomId: "room-send",
+            repository: SendingRoomTimelineRepository()
+        )
+        await viewModel.load()
+        viewModel.send(.draftChanged("Hello ShadowChat"))
+
+        await viewModel.sendDraft()
+
+        guard case let .loaded(_, items) = viewModel.state else {
+            return XCTFail("Expected a loaded timeline")
+        }
+        XCTAssertEqual(items.map(\.messageId), ["existing-message"])
+        XCTAssertEqual(viewModel.draft, "")
+        XCTAssertNil(viewModel.sendErrorMessage)
+    }
+
+    func testUnavailableSendPreservesDraftAndPublishesError() async {
+        let viewModel = RoomTimelineViewModel(
+            roomId: "room-no-send",
+            repository: StubRoomTimelineRepository(
+                result: .success(
+                    RoomTimelineSnapshotViewState(
+                        roomId: "room-no-send",
+                        roomTitle: "Read only",
+                        items: [
+                            RoomTimelineItemViewState(
+                                messageId: "existing",
+                                senderDisplayName: "Ari",
+                                body: "Existing",
+                                sentAtLabel: "10:00",
+                                direction: .incoming,
+                                deliveryState: .read
+                            )
+                        ]
+                    )
+                )
+            )
+        )
+        await viewModel.load()
+        viewModel.send(.draftChanged("Keep me"))
+
+        await viewModel.sendDraft()
+
+        XCTAssertEqual(viewModel.draft, "Keep me")
+        XCTAssertNotNil(viewModel.sendErrorMessage)
+    }
+
+    func testSendFromEmptyRoomClearsDraftWithoutSyntheticMessage() async {
+        let viewModel = RoomTimelineViewModel(
+            roomId: "empty-room",
+            repository: EmptySendingRoomTimelineRepository()
+        )
+        await viewModel.load()
+        viewModel.send(.draftChanged("First message"))
+
+        await viewModel.sendDraft()
+
+        XCTAssertEqual(viewModel.state, .empty(roomTitle: "Empty room"))
+        XCTAssertEqual(viewModel.draft, "")
+    }
 }
 
 private struct StubRoomTimelineRepository: RoomTimelineRepository {
@@ -119,3 +215,58 @@ private final class SequencedRoomTimelineRepository: RoomTimelineRepository, @un
 }
 
 private struct TestError: Error {}
+
+private struct StreamingRoomTimelineRepository: RoomTimelineRepository {
+    let updatedSnapshot: RoomTimelineSnapshotViewState
+
+    func loadTimeline(roomId: String) async throws -> RoomTimelineSnapshotViewState {
+        RoomTimelineSnapshotViewState(
+            roomId: roomId,
+            roomTitle: "Live Room",
+            securityState: .unknown,
+            items: []
+        )
+    }
+
+    func timelineUpdates(
+        roomId: String
+    ) async throws -> AsyncStream<RoomTimelineSnapshotViewState> {
+        AsyncStream { continuation in
+            continuation.yield(updatedSnapshot)
+            continuation.finish()
+        }
+    }
+}
+
+private struct SendingRoomTimelineRepository: RoomTimelineRepository {
+    func loadTimeline(roomId: String) async throws -> RoomTimelineSnapshotViewState {
+        RoomTimelineSnapshotViewState(
+            roomId: roomId,
+            roomTitle: "Send Test",
+            items: [
+                RoomTimelineItemViewState(
+                    messageId: "existing-message",
+                    senderDisplayName: "Ari",
+                    body: "Ready",
+                    sentAtLabel: "Earlier",
+                    direction: .incoming,
+                    deliveryState: .read
+                )
+            ]
+        )
+    }
+
+    func sendMessage(roomId: String, body: String) async throws {}
+}
+
+private struct EmptySendingRoomTimelineRepository: RoomTimelineRepository {
+    func loadTimeline(roomId: String) async throws -> RoomTimelineSnapshotViewState {
+        RoomTimelineSnapshotViewState(
+            roomId: roomId,
+            roomTitle: "Empty room",
+            items: []
+        )
+    }
+
+    func sendMessage(roomId: String, body: String) async throws {}
+}

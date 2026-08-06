@@ -1,5 +1,8 @@
 # ShadowChat Docs
 
+## Projektsteuerung
+- `PROJECT-TODO.md`
+
 ## Release
 - `../VERSION`
 - `../CHANGELOG.md`
@@ -33,6 +36,8 @@
 - `technical-design/TD-0014-rust-matrix-runtime-skeleton.md`
 - `technical-design/TD-0015-ffi-dto-surface.md`
 - `technical-design/TD-0016-mobile-repository-swap-boundary.md`
+- `technical-design/TD-0017-ios-product-shell.md`
+- `technical-design/TD-0018-ios-matrix-rust-runtime.md`
 
 ## Architekturentscheidungen
 - `adr/ADR-0001-monorepo.md`
@@ -49,8 +54,11 @@
 - `adr/ADR-0012-feature-modules.md`
 - `adr/ADR-0013-release-channels.md`
 - `adr/ADR-0014-matrix-ui-layer.md`
+- `adr/ADR-0015-element-x-ios-pattern-adoption.md`
+- `adr/ADR-0016-hybrid-matrix-runtime.md`
 
 ## Qualität
+- `quality/branch-integration-plan-2026-07-27.md`
 - `quality/security-baseline.md`
 - `quality/test-strategy.md`
 - `quality/checkly-smoke-check.md`

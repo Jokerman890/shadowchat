@@ -1,0 +1,130 @@
+name: ShadowChat
+
+options:
+  minimumXcodeGenVersion: 2.37.0
+  xcodeVersion: "16.0"
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+configs:
+  Debug: debug
+  Release: release
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+    SUPPORTS_MACCATALYST: NO
+    CLANG_ENABLE_OBJC_ARC: YES
+    CLANG_ENABLE_MODULES: YES
+    CLANG_ENABLE_OBJC_WEAK: YES
+    SWIFT_ENABLE_EXPLICIT_MODULES: YES
+    ENABLE_PREVIEWS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SHADOW_PUSH_GATEWAY_URL: ""
+    SHADOW_SIGNAL_MANAGEMENT_ROOM_ID: ""
+    SHADOW_SIGNAL_BOT_USER_ID: ""
+    SHADOW_WHATSAPP_MANAGEMENT_ROOM_ID: ""
+    SHADOW_WHATSAPP_BOT_USER_ID: ""
+  configs:
+    Debug:
+      SHADOW_APS_ENVIRONMENT: development
+      SWIFT_COMPILATION_MODE: incremental
+      SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+      DEBUG_INFORMATION_FORMAT: dwarf
+      ENABLE_TESTABILITY: YES
+      ONLY_ACTIVE_ARCH: YES
+    Release:
+      SHADOW_APS_ENVIRONMENT: production
+      SWIFT_COMPILATION_MODE: wholemodule
+      SWIFT_OPTIMIZATION_LEVEL: "-O"
+      DEBUG_INFORMATION_FORMAT: "dwarf-with-dsym"
+      ENABLE_NS_ASSERTIONS: NO
+      VALIDATE_PRODUCT: YES
+
+packages:
+  ShadowChatMobile:
+    path: Packages
+  MatrixRustSDK:
+    url: https://github.com/element-hq/matrix-rust-components-swift
+    exactVersion: 26.07.23
+  KeychainAccess:
+    url: https://github.com/kishikawakatsumi/KeychainAccess
+    minorVersion: 4.2.2
+  SwiftCrypto:
+    url: https://github.com/apple/swift-crypto
+    from: 4.0.0
+  SwiftLint:
+    url: https://github.com/SimplyDanny/SwiftLintPlugins
+    from: 0.59.1
+
+targets:
+  ShadowChat:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: ShadowChat
+    dependencies:
+      - target: ShadowChatNSE
+        embed: true
+      - package: ShadowChatMobile
+        product: ShadowChatAppShell
+      - package: ShadowChatMobile
+        product: ShadowChatListFeature
+      - package: ShadowChatMobile
+        product: ShadowRoomTimelineFeature
+      - package: MatrixRustSDK
+        product: MatrixRustSDK
+      - package: KeychainAccess
+        product: KeychainAccess
+      - package: SwiftCrypto
+        product: Crypto
+    buildToolPlugins:
+      - plugin: SwiftLintBuildToolPlugin
+        package: SwiftLint
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.shadowchat.ios
+        PRODUCT_NAME: ShadowChat
+        PRODUCT_MODULE_NAME: ShadowChat
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Configuration/ShadowChat-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Configuration/ShadowChat.entitlements
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+    scheme:
+      gatherCoverageData: true
+
+  ShadowChatNSE:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: ShadowChatNSE
+    buildToolPlugins:
+      - plugin: SwiftLintBuildToolPlugin
+        package: SwiftLint
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.shadowchat.ios.NotificationService
+        PRODUCT_NAME: ShadowChatNSE
+        PRODUCT_MODULE_NAME: ShadowChatNSE
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Configuration/ShadowChatNSE-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Configuration/ShadowChatNSE.entitlements
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""

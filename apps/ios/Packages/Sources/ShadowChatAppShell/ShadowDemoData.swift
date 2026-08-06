@@ -1,3 +1,4 @@
+import Foundation
 import ShadowChatListFeature
 import ShadowRoomTimelineFeature
 
@@ -5,19 +6,12 @@ struct ShadowShellRowData: Identifiable {
     let id: String
     let title: String
     let subtitle: String
-    let trailing: String
 
-    init(title: String, subtitle: String, trailing: String) {
-        self.id = "\(title)-\(subtitle)-\(trailing)"
+    init(title: String, subtitle: String) {
+        self.id = "\(title)-\(subtitle)"
         self.title = title
         self.subtitle = subtitle
-        self.trailing = trailing
     }
-}
-
-struct ShadowShellHeroData {
-    let name: String
-    let subtitle: String
 }
 
 enum ShadowDemoData {
@@ -32,47 +26,19 @@ enum ShadowDemoData {
         ChatListItemViewState(roomId: "daniel", title: "Daniel Carter", previewText: "Call me when you are free.", sentAtLabel: "Wed", unreadCount: 3, trustLevel: .reduced)
     ]
 
-    static let callFilters = ["All", "Missed", "Voicemail"]
-
     static let callRows: [ShadowShellRowData] = [
-        ShadowShellRowData(title: "Sofia Martin", subtitle: "Outgoing call, today", trailing: "Call"),
-        ShadowShellRowData(title: "Daniel Carter", subtitle: "Missed call, yesterday", trailing: "Call"),
-        ShadowShellRowData(title: "Adventure Club", subtitle: "Group call preview", trailing: "Call")
+        ShadowShellRowData(title: "Sofia Martin", subtitle: "Outgoing call, today"),
+        ShadowShellRowData(title: "Daniel Carter", subtitle: "Missed call, yesterday"),
+        ShadowShellRowData(title: "Adventure Club", subtitle: "Group call preview")
     ]
-
-    static let updateRows: [ShadowShellRowData] = [
-        ShadowShellRowData(title: "My Status", subtitle: "Add a soft glass status update", trailing: "New"),
-        ShadowShellRowData(title: "Emma Wilson", subtitle: "Recent update", trailing: "View"),
-        ShadowShellRowData(title: "Family", subtitle: "Viewed update", trailing: "View")
-    ]
-
-    static let profileHero = ShadowShellHeroData(name: "Sofia Martin", subtitle: "Online now")
-    static let profileActions = ["Message", "Call", "Video", "Pay"]
-    static let profileRows: [ShadowShellRowData] = [
-        ShadowShellRowData(title: "About", subtitle: "Building calm, secure conversations.", trailing: "Edit"),
-        ShadowShellRowData(title: "Media, Links, Docs", subtitle: "24 shared items", trailing: "Open"),
-        ShadowShellRowData(title: "Starred Messages", subtitle: "Quick access shell", trailing: "Open")
-    ]
-
-    static let settingsHero = ShadowShellHeroData(name: "ShadowChat", subtitle: "Premium messenger shell")
-    static let settingsRows: [ShadowShellRowData] = [
-        "Account",
-        "Privacy",
-        "Notifications",
-        "Appearance",
-        "Chats",
-        "Storage and Data",
-        "Help Center",
-        "Invite Friends"
-    ].map { title in
-        ShadowShellRowData(title: title, subtitle: "Settings group shell", trailing: "Open")
-    }
 
     static func timelineSnapshot(roomId: String) -> RoomTimelineSnapshotViewState {
-        let roomTitle = chatRooms.first { $0.roomId == roomId }?.title ?? "Conversation"
+        let room = chatRooms.first { $0.roomId == roomId }
+        let roomTitle = room?.title ?? "Conversation"
         return RoomTimelineSnapshotViewState(
             roomId: roomId,
             roomTitle: roomTitle,
+            securityState: room?.trustLevel == .reduced ? .unencrypted : .encrypted,
             items: timelineItems(roomId: roomId, roomTitle: roomTitle)
         )
     }
@@ -84,7 +50,7 @@ enum ShadowDemoData {
                 incoming("sofia-1", roomTitle, "Hey! Are we still on for dinner tonight?", "09:41"),
                 outgoing("sofia-2", "Yes. I will be there at 8.", "09:43", .delivered),
                 incoming("sofia-3", roomTitle, "Perfect. I saved us a table near the window.", "09:44"),
-                outgoing("sofia-4", "Voice preview and media cards will land in the send pipeline slice.", "09:45", .sent)
+                outgoing("sofia-4", "Great, see you there.", "09:45", .sent)
             ]
         case "design-squad":
             return [
@@ -175,4 +141,6 @@ struct DemoRoomTimelineRepository: RoomTimelineRepository {
     func loadTimeline(roomId: String) async throws -> RoomTimelineSnapshotViewState {
         ShadowDemoData.timelineSnapshot(roomId: roomId)
     }
+
+    func sendMessage(roomId: String, body: String) async throws {}
 }

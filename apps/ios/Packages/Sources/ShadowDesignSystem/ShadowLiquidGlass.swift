@@ -43,18 +43,18 @@ public struct ShadowLiquidBackground<Content: View>: View {
     private var backgroundColors: [Color] {
         if colorScheme == .dark {
             return [
-                Color(red: 0.07, green: 0.065, blue: 0.10),
-                Color(red: 0.11, green: 0.095, blue: 0.19),
-                Color(red: 0.075, green: 0.14, blue: 0.22),
-                Color(red: 0.14, green: 0.095, blue: 0.16)
+                ShadowColors.oledBlack,
+                ShadowColors.background,
+                ShadowColors.iceBlue,
+                ShadowColors.oledBlack
             ]
         }
 
         return [
-            ShadowColors.background,
-            ShadowColors.lavenderMist,
-            ShadowColors.iceBlue,
-            ShadowColors.blush
+            ShadowColors.lightBackgroundStart,
+            ShadowColors.lightBackgroundMiddle,
+            ShadowColors.lightBackgroundEnd,
+            ShadowColors.lightCanvas
         ]
     }
 }

@@ -4,6 +4,14 @@ Version: 0.1
 Status: Draft
 Plattformen: iOS, Android
 
+## Plattform-Designziel
+- Die iOS-App folgt der visuellen und interaktiven Designsprache von iOS 27.
+- Das Designziel ist unabhängig von der separat festzulegenden technischen Mindestversion.
+- Systemnahe Navigation, Materialien, Typografie, Motion und Accessibility haben Vorrang vor rein dekorativen Nachbildungen.
+- Die App ist bewusst motion-rich: unterschiedliche Übergänge und Mikrointeraktionen vermitteln Navigation, Hierarchie, Status und Vertrauen.
+- Animationen müssen auf dem jeweiligen Gerät flüssig bleiben und dürfen Chat-Liste, Timeline oder Composer nicht beeinträchtigen.
+- Reduce Motion erhält eine gleichwertige, verständliche Darstellung mit reduzierten oder unmittelbaren Zustandswechseln.
+
 ## Vision
 ShadowChat ist ein hochwertiger, sicherheitsorientierter Messenger mit moderner visueller Identität, nativen Mobile-Apps und vorbereitetem Abo-Modell.
 

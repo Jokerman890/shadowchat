@@ -2,7 +2,9 @@
 
 ## Status
 
-Audit fuer den naechsten Integrationsabschnitt. Dieser Slice fuehrt keine Matrix-SDK-Live-Anbindung ein.
+Historisches Readiness-Audit. Die damals offene Matrix-Core-Frage ist mit
+ADR-0016 zugunsten einer hybriden Architektur entschieden. iOS besitzt
+inzwischen eine Live-Anbindung; Android verwendet weiterhin Demodaten.
 
 ## Ziel
 
@@ -36,7 +38,7 @@ iOS:
 
 Die Contracts liefern aktuell Snapshots. Sie kennen noch keine Live-Updates, Pagination, Sync-Token, Session-Identitaet oder Fehlerdetails.
 
-### Rust-Core
+### Rust-Core zum Zeitpunkt des Audits
 
 Der Rust-Workspace ist vorhanden und enthaelt minimale Crates:
 
@@ -48,7 +50,7 @@ Der Rust-Workspace ist vorhanden und enthaelt minimale Crates:
 
 Aktuell sind dies Stubs bzw. fruehe Domain-Ansaetze. `shadow_core_rooms` liefert eine lokale Bootstrap-Liste. `shadow_core_timeline` enthaelt nur erste Message-/Delivery-State-Bausteine. Eine echte Matrix-Runtime, ein Client-Lifecycle, Sync-Loop, Room-List-Service oder Timeline-Subscription existieren noch nicht.
 
-### FFI und Bindings
+### FFI und Bindings zum Zeitpunkt des Audits
 
 Es gibt noch keine produktive FFI-Schicht fuer Android oder iOS. Das ist fuer den aktuellen Stand korrekt, weil die Core-Contracts und Mapping-Regeln noch nicht stabil genug sind.
 
@@ -76,7 +78,7 @@ Es gibt noch keine produktive FFI-Schicht fuer Android oder iOS. Das ist fuer de
 ## Boundary-Regeln fuer die naechsten Slices
 
 1. Mobile UI darf weiterhin nur app-eigene UI- und Domain-nahe Modelle sehen.
-2. Matrix-SDK-Typen bleiben hinter Rust-Core- oder Service-Adaptern verborgen.
+2. Matrix-SDK-Typen bleiben hinter dem jeweiligen Plattformadapter verborgen.
 3. Demo-Repositories bleiben erhalten, bis echte Services dieselben Contracts erfuellen.
 4. Live-Updates duerfen nicht direkt in Composables oder SwiftUI-Views gebunden werden.
 5. Repository- oder Service-Contracts muessen Cancellation und Lifecycle der Plattform respektieren.
@@ -99,7 +101,8 @@ Nicht enthalten: Matrix-Runtime, Netzwerk, Persistenz, FFI.
 
 ### Slice 2: Matrix Runtime Boundary Design
 
-Ziel: Session-, Client- und Sync-Lifecycle als Boundary dokumentieren.
+Ziel: Session-, Client- und Sync-Lifecycle des Plattformadapters als Boundary
+dokumentieren.
 
 Umfang:
 
@@ -111,18 +114,19 @@ Umfang:
 
 Nicht enthalten: produktive Credentials oder echte Login-Flows.
 
-### Slice 3: FFI Shape Prototype
+### Slice 3: Contract- und Conformance-Prototyp
 
-Ziel: FFI-Form fuer Android/iOS festlegen, ohne echte Matrix-Daten zu laden.
+Ziel: gemeinsame Wertmodelle und Fixtures für Android/iOS festlegen, ohne
+hohe Eventraten durch eine zusätzliche ShadowChat-FFI zu leiten.
 
 Umfang:
 
-- Methode fuer Snapshot-Calls
-- spaetere Streaming-Form fuer Room List / Timeline
+- Snapshot- und Diff-Contracts
+- Streaming-, Backpressure- und Cancellation-Regeln
 - Error mapping
-- Threading- und Memory-Regeln
+- gemeinsame Conformance-Fixtures
 
-Nicht enthalten: Matrix-SDK-Live-Anbindung.
+Nicht enthalten: generierte Mobile-Bindings oder Matrix-SDK-Live-Anbindung.
 
 ### Slice 4: Room List Service Adapter
 
@@ -149,13 +153,18 @@ Umfang:
 
 Nicht enthalten: Send Pipeline.
 
-## Konkrete offene Entscheidungen
+## Aufgelöste Architekturentscheidungen
 
-- Ob Rust die alleinige Matrix-SDK-Integration hostet oder ob mobile Plattformen zusaetzliche native Adapter benoetigen.
-- Welche FFI-Technologie verwendet wird und wie sie in CI validiert wird.
-- Ob Room List / Timeline zuerst Snapshot-only oder direkt mit Streaming-Contracts modelliert werden.
-- Wie Matrix Trust, Device Trust und Bridge Trust getrennt, aber UI-verstaendlich abgebildet werden.
-- Wie Session-Restore und Sync-Lifecycle getestet werden, ohne echte Credentials in CI zu verwenden.
+- ADR-0016 wählt native Plattformadapter mit gemeinsamem Policy-/Contract-Core.
+- Es wird keine zusätzliche ShadowChat-FFI für Room-List-/Timeline-Hot-Paths
+  eingeführt.
+- Room List und Timeline benötigen snapshots plus lifecycle-sichere Streams;
+  Backpressure und Cancellation werden vor Android-Live-Integration
+  festgelegt.
+- Matrix Trust, Device Trust und Bridge Trust bleiben getrennte app-eigene
+  Semantiken.
+- Credential-freie Contract-Tests werden durch adapterbezogene
+  Integrationstests in kontrollierten Testumgebungen ergänzt.
 
 ## Validierungsanforderungen fuer spaetere Integrationsslices
 
@@ -180,4 +189,11 @@ Nicht enthalten: Send Pipeline.
 
 ## Ergebnis
 
-Die vorhandenen Mobile-Slices sind fuer eine spaetere Integration gut vorbereitet, weil UI, State und Repository-Contracts bereits getrennt sind. Der groesste fehlende Schritt liegt nicht in der UI, sondern in stabilen Core-/Contract-/FFI-Boundaries fuer Matrix Room List und Timeline. Der naechste produktive Slice sollte deshalb nicht direkt Matrix-Live-Daten laden, sondern zuerst Core Domain Contracts und Runtime/FFI-Boundaries konkretisieren.
+Die Trennung von UI, State und Repository-Contracts war tragfähig und ermöglichte
+die iOS-Live-Integration. Die Zielgrenze liegt gemäß ADR-0016 zwischen
+Feature-Repositories und Plattform-Matrix-Adaptern. Der gemeinsame Rust-Core
+liefert pure Policies und Testvektoren, aber keine zweite Matrix-Laufzeit.
+
+Für Android folgen zuerst Session-/Sync-Adapter und danach Live-Room-List und
+Timeline. Für beide Plattformen bleiben Streaming, Cancellation, Pagination
+und Performance-Baselines eigene P0-/P1-Arbeitspakete.
